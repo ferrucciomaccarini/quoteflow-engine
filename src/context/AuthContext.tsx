@@ -133,8 +133,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       // User profile will be created by database trigger and 
       // then fetched by the onAuthStateChange listener
-      
-      return data;
     } catch (error: any) {
       console.error("Registration failed:", error);
       throw error;
