@@ -7,45 +7,68 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
-const LoginForm = ({ onToggleForm }: { onToggleForm: () => void }) => {
+const RegisterForm = ({ onToggleForm }: { onToggleForm: () => void }) => {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const { login } = useAuth();
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isRegistering, setIsRegistering] = useState(false);
+  const { register } = useAuth();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoggingIn(true);
+    
+    if (password !== confirmPassword) {
+      toast({
+        title: "Passwords do not match",
+        description: "Please ensure your passwords match.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsRegistering(true);
 
     try {
-      await login(email, password);
+      await register(email, password, name);
       toast({
-        title: "Login successful",
-        description: "Welcome back!",
+        title: "Registration successful",
+        description: "Your account has been created.",
       });
     } catch (error: any) {
-      console.error("Login error:", error);
+      console.error("Registration error:", error);
       toast({
-        title: "Login failed",
-        description: error.message || "Please check your credentials and try again.",
+        title: "Registration failed",
+        description: error.message || "There was an error creating your account.",
         variant: "destructive",
       });
     } finally {
-      setIsLoggingIn(false);
+      setIsRegistering(false);
     }
   };
 
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle className="text-2xl font-bold text-center">Pmix EaaS Login</CardTitle>
+        <CardTitle className="text-2xl font-bold text-center">Create an Account</CardTitle>
         <CardDescription className="text-center">
-          Enter your credentials below to access the Pmix EaaS platform.
+          Sign up to access the Pmix EaaS platform.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Full Name</Label>
+            <Input
+              id="name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter your full name"
+              required
+            />
+          </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -64,24 +87,35 @@ const LoginForm = ({ onToggleForm }: { onToggleForm: () => void }) => {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
+              placeholder="Create a password"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <Input
+              id="confirmPassword"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm your password"
               required
             />
           </div>
           <Button
             type="submit"
             className="w-full"
-            disabled={isLoggingIn}
+            disabled={isRegistering}
           >
-            {isLoggingIn ? "Logging in..." : "Log In"}
+            {isRegistering ? "Creating Account..." : "Sign Up"}
           </Button>
         </form>
       </CardContent>
       <CardFooter className="flex justify-center text-sm">
         <p>
-          New to Pmix?{" "}
+          Already have an account?{" "}
           <Button variant="link" className="p-0" onClick={onToggleForm}>
-            Create an account
+            Log in
           </Button>
         </p>
       </CardFooter>
@@ -89,4 +123,4 @@ const LoginForm = ({ onToggleForm }: { onToggleForm: () => void }) => {
   );
 };
 
-export default LoginForm;
+export default RegisterForm;

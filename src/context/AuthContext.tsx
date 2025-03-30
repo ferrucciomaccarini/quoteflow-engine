@@ -18,6 +18,7 @@ interface AuthContextProps {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -113,6 +114,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const register = async (email: string, password: string, name: string) => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+          },
+        }
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      // User profile will be created by database trigger and 
+      // then fetched by the onAuthStateChange listener
+      
+      return data;
+    } catch (error: any) {
+      console.error("Registration failed:", error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = async () => {
     try {
       await supabase.auth.signOut();
@@ -134,6 +164,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: !!user,
         isLoading,
         login,
+        register,
         logout
       }}
     >

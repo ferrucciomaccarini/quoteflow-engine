@@ -1,10 +1,17 @@
 
+import { useState } from "react";
 import LoginForm from "@/components/Auth/LoginForm";
+import RegisterForm from "@/components/Auth/RegisterForm";
 import { useAuth } from "@/context/AuthContext";
 import { Navigate } from "react-router-dom";
 
 const Login = () => {
   const { isAuthenticated, isLoading } = useAuth();
+  const [showLogin, setShowLogin] = useState(true);
+
+  const toggleForm = () => {
+    setShowLogin(!showLogin);
+  };
 
   if (isLoading) {
     return (
@@ -26,7 +33,12 @@ const Login = () => {
           Equipment as a Service quoting platform for machinery owners
         </p>
       </div>
-      <LoginForm />
+      
+      {showLogin ? (
+        <LoginForm onToggleForm={toggleForm} />
+      ) : (
+        <RegisterForm onToggleForm={toggleForm} />
+      )}
     </div>
   );
 };
