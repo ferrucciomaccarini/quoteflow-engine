@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/DataTable";
@@ -11,8 +10,20 @@ import { useToast } from "@/components/ui/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-// Mock service data
-const initialServices = [
+interface Service {
+  id: string;
+  name: string;
+  category: string;
+  machineCategory: string;
+  intervalType: "hours" | "months";
+  intervalValue: number;
+  partsCost: number;
+  laborCost: number;
+  consumablesCost: number;
+  description: string;
+}
+
+const initialServices: Service[] = [
   {
     id: "S1001",
     name: "Preventive Maintenance - Basic",
@@ -50,19 +61,6 @@ const initialServices = [
     description: "Standard insurance coverage for equipment"
   },
 ];
-
-interface Service {
-  id: string;
-  name: string;
-  category: string;
-  machineCategory: string;
-  intervalType: "hours" | "months";
-  intervalValue: number;
-  partsCost: number;
-  laborCost: number;
-  consumablesCost: number;
-  description: string;
-}
 
 const ServiceCatalog = () => {
   const { toast } = useToast();
