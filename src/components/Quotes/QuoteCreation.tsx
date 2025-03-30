@@ -553,7 +553,7 @@ const SummaryStep = ({ data, updateData }: any) => {
         contractDuration
       );
       
-      const totalFee = (data.equipmentFee || 0) + (data.servicesFee || 0) + riskFee;
+      const totalFee = (data.equipmentFee || 0) + (data.servicesFee || 0) + (riskFee || 0);
       
       updateData({
         totalResidualRisk,
@@ -765,9 +765,12 @@ const QuoteCreation = () => {
       
       const quoteData = {
         ...data,
+        totalFee: data.totalFee || data.totalFeeBeforeRisks || 0, 
         status: "Pending",
         createdAt: new Date().toISOString()
       };
+      
+      console.log("Saving quote with data:", quoteData);
       
       await saveQuote(quoteData);
       

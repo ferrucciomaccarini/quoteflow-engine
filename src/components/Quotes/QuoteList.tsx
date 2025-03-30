@@ -18,6 +18,14 @@ interface Quote {
   status: string;
 }
 
+// Define the column type to match the DataTable component requirements
+interface Column<T> {
+  header: string;
+  accessorKey?: keyof T | string;
+  id?: string;
+  cell?: (info: any) => React.ReactNode;
+}
+
 const QuoteList = () => {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,7 +66,7 @@ const QuoteList = () => {
     fetchQuotes();
   }, [isAuthenticated, toast]);
 
-  const quoteColumns = [
+  const quoteColumns: Column<Quote>[] = [
     { header: "Quote ID", accessorKey: "id" },
     { header: "Customer", accessorKey: "customer_name" },
     { header: "Equipment", accessorKey: "machine_name" },

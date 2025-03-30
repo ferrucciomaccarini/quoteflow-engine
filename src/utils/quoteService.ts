@@ -8,7 +8,7 @@ interface QuoteData {
   machineValue: number;
   timeHorizon: number;
   contractDuration: number;
-  totalFee: number;
+  totalFee: number; // Ensuring this field is defined
   servicesPresentValue?: number;
   status: "Draft" | "Pending" | "Approved" | "Rejected";
   [key: string]: any; // For additional properties
@@ -24,6 +24,11 @@ export const saveQuote = async (quoteData: QuoteData) => {
     
     const userId = sessionData.session.user.id;
     
+    // Make sure totalFee is defined, if not use totalFee or totalFeeBeforeRisks or a default value
+    const totalFeeToSave = quoteData.totalFee || quoteData.totalFeeBeforeRisks || 0;
+    
+    console.log("Saving quote with total fee:", totalFeeToSave);
+    
     // Save the quote to the database
     const { data, error } = await supabase
       .from('quotes')
@@ -36,7 +41,7 @@ export const saveQuote = async (quoteData: QuoteData) => {
           machine_value: quoteData.machineValue,
           time_horizon: quoteData.timeHorizon,
           contract_duration: quoteData.contractDuration,
-          total_fee: quoteData.totalFee,
+          total_fee: totalFeeToSave, // Use calculated value here
           services_value: quoteData.servicesPresentValue || 0,
           status: quoteData.status,
           quote_data: quoteData // Store the full quote data as JSON
