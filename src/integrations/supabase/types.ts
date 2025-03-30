@@ -42,6 +42,57 @@ export type Database = {
         }
         Relationships: []
       }
+      quotes: {
+        Row: {
+          contact_person: string | null
+          contract_duration: number
+          created_at: string
+          customer_name: string
+          id: string
+          machine_name: string
+          machine_value: number
+          quote_data: Json
+          services_value: number | null
+          status: string
+          time_horizon: number
+          total_fee: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          contact_person?: string | null
+          contract_duration: number
+          created_at?: string
+          customer_name: string
+          id?: string
+          machine_name: string
+          machine_value: number
+          quote_data: Json
+          services_value?: number | null
+          status: string
+          time_horizon: number
+          total_fee: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          contact_person?: string | null
+          contract_duration?: number
+          created_at?: string
+          customer_name?: string
+          id?: string
+          machine_name?: string
+          machine_value?: number
+          quote_data?: Json
+          services_value?: number | null
+          status?: string
+          time_horizon?: number
+          total_fee?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

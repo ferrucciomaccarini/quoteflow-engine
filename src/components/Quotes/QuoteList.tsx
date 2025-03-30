@@ -1,133 +1,101 @@
 
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { DataTable } from "@/components/ui/DataTable";
+import React, { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, FileText, Calendar, Download } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { useNavigate } from "react-router-dom";
+import { Plus, FileText } from "lucide-react";
+import { DataTable } from "@/components/ui/DataTable";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 
-// Sample quotes data
-const initialQuotes = [
-  {
-    id: "Q1001",
-    customerName: "ABC Manufacturing",
-    machineName: "Industrial Press XL-5000",
-    totalFee: 1250,
-    contractDuration: 36,
-    createdAt: "2023-11-15",
-    status: "Approved"
-  },
-  {
-    id: "Q1002",
-    customerName: "GlobalTech Industries",
-    machineName: "Robotic Arm System R-200",
-    totalFee: 1850,
-    contractDuration: 48,
-    createdAt: "2023-11-12",
-    status: "Pending"
-  },
-  {
-    id: "Q1003", 
-    customerName: "EastCoast Fabrication",
-    machineName: "CNC Machine T-3000",
-    totalFee: 1420,
-    contractDuration: 24,
-    createdAt: "2023-11-10",
-    status: "Draft"
-  },
-  {
-    id: "Q1004", 
-    customerName: "Southwest Materials",
-    machineName: "Industrial Press XL-5000",
-    totalFee: 1150,
-    contractDuration: 36,
-    createdAt: "2023-11-05",
-    status: "Approved"
-  },
-  {
-    id: "Q1005", 
-    customerName: "Northern Tools Co",
-    machineName: "CNC Machine T-3000",
-    totalFee: 1310,
-    contractDuration: 24,
-    createdAt: "2023-11-01",
-    status: "Rejected"
-  }
-];
+interface Quote {
+  id: string;
+  customer_name: string;
+  machine_name: string;
+  total_fee: number;
+  created_at: string;
+  status: string;
+}
 
 const QuoteList = () => {
-  const [quotes] = useState(initialQuotes);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [quotes, setQuotes] = useState<Quote[]>([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
 
-  const filteredQuotes = quotes.filter(
-    quote => 
-      quote.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      quote.machineName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      quote.id.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  useEffect(() => {
+    const fetchQuotes = async () => {
+      if (!isAuthenticated) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('quotes')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          throw error;
+        }
+
+        setQuotes(data || []);
+      } catch (error) {
+        console.error('Error fetching quotes:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load quotes. Please try again later.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchQuotes();
+  }, [isAuthenticated, toast]);
 
   const quoteColumns = [
+    { header: "Quote ID", accessorKey: "id" },
+    { header: "Customer", accessorKey: "customer_name" },
+    { header: "Equipment", accessorKey: "machine_name" },
     { 
-      header: "Quote ID", 
-      accessorKey: "id",
-      cell: (row: any) => (
-        <Link to={`/quotes/${row.id}`} className="text-primary font-medium hover:underline">
-          {row.id}
-        </Link>
-      )
-    },
-    { header: "Customer", accessorKey: "customerName" },
-    { header: "Equipment", accessorKey: "machineName" },
-    { 
-      header: "Monthly Fee", 
-      accessorKey: "totalFee",
-      cell: (row: any) => `$${row.totalFee.toLocaleString()}`
+      header: "Amount", 
+      accessorKey: "total_fee",
+      cell: (info: any) => `$${parseFloat(info.getValue()).toLocaleString()}/month`
     },
     { 
-      header: "Duration", 
-      accessorKey: "contractDuration",
-      cell: (row: any) => `${row.contractDuration} months`
-    },
-    { 
-      header: "Created", 
-      accessorKey: "createdAt",
-      cell: (row: any) => new Date(row.createdAt).toLocaleDateString()
+      header: "Date", 
+      accessorKey: "created_at",
+      cell: (info: any) => new Date(info.getValue()).toLocaleDateString()
     },
     { 
       header: "Status", 
       accessorKey: "status",
-      cell: (row: any) => (
+      cell: (info: any) => (
         <span className={`px-2 py-1 text-xs rounded-full ${
-          row.status === "Approved" ? "bg-green-100 text-green-800" :
-          row.status === "Pending" ? "bg-yellow-100 text-yellow-800" :
-          row.status === "Rejected" ? "bg-red-100 text-red-800" :
+          info.getValue() === "Approved" ? "bg-green-100 text-green-800" :
+          info.getValue() === "Pending" ? "bg-yellow-100 text-yellow-800" :
+          info.getValue() === "Rejected" ? "bg-red-100 text-red-800" :
           "bg-gray-100 text-gray-800"
         }`}>
-          {row.status}
+          {info.getValue()}
         </span>
       )
     },
     {
       header: "Actions",
-      accessorKey: "id",
-      cell: (row: any) => (
+      id: "actions",
+      cell: (info: any) => (
         <div className="flex space-x-2">
           <Button variant="outline" size="sm" asChild>
-            <Link to={`/quotes/${row.id}`}>
-              <FileText className="mr-1" size={14} />
+            <span onClick={() => navigate(`/quotes/${info.row.original.id}`)}>
+              <FileText className="mr-1 h-4 w-4" />
               View
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm">
-            <Download className="mr-1" size={14} />
-            PDF
+            </span>
           </Button>
         </div>
       )
@@ -135,98 +103,43 @@ const QuoteList = () => {
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div>
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Quotes</h1>
-          <p className="text-gray-600">
-            Manage your Equipment as a Service quotes
+          <h1 className="text-3xl font-bold">Quotes</h1>
+          <p className="text-muted-foreground">
+            Manage your Equipment as a Service (EaaS) quotes
           </p>
         </div>
-        <Button asChild>
-          <Link to="/quotes/new">
-            <Plus className="mr-2" size={18} />
-            New Quote
-          </Link>
+        <Button onClick={() => navigate("/quotes/new")}>
+          <Plus className="mr-2 h-4 w-4" />
+          New Quote
         </Button>
       </div>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <div>
-            <CardTitle>Quote Management</CardTitle>
-            <CardDescription>View and manage all your quotes</CardDescription>
-          </div>
-          <Input
-            placeholder="Search quotes..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="max-w-xs"
-          />
+        <CardHeader>
+          <CardTitle>All Quotes</CardTitle>
+          <CardDescription>View and manage all your quotes</CardDescription>
         </CardHeader>
         <CardContent>
-          <DataTable columns={quoteColumns} data={filteredQuotes} />
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <p>Loading quotes...</p>
+            </div>
+          ) : quotes.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground mb-4">No quotes found</p>
+              <Button onClick={() => navigate("/quotes/new")}>
+                <Plus className="mr-2 h-4 w-4" />
+                Create Your First Quote
+              </Button>
+            </div>
+          ) : (
+            <DataTable columns={quoteColumns} data={quotes} />
+          )}
         </CardContent>
       </Card>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Pending Quotes
-              </CardTitle>
-              <Calendar size={18} className="text-muted-foreground" />
-            </div>
-            <CardDescription className="text-2xl font-bold">
-              {quotes.filter(q => q.status === "Pending").length}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground">
-              Waiting for approval
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Approved Quotes
-              </CardTitle>
-              <Calendar size={18} className="text-muted-foreground" />
-            </div>
-            <CardDescription className="text-2xl font-bold">
-              {quotes.filter(q => q.status === "Approved").length}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground">
-              Ready to be converted to contracts
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Quote Value
-              </CardTitle>
-              <Calendar size={18} className="text-muted-foreground" />
-            </div>
-            <CardDescription className="text-2xl font-bold">
-              ${quotes.reduce((sum, quote) => sum + quote.totalFee, 0).toLocaleString()} / month
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground">
-              Across all active quotes
-            </p>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 };
