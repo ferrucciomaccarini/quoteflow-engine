@@ -1,7 +1,10 @@
 
 import React, { createContext, useState, useEffect, useContext, ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { User, Session } from "@supabase/supabase-js";
+import { useToast } from "@/hooks/use-toast";
 
-interface User {
+interface UserProfile {
   id: string;
   name: string;
   email: string;
@@ -11,7 +14,7 @@ interface User {
 }
 
 interface AuthContextProps {
-  user: User | null;
+  user: UserProfile | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
@@ -21,62 +24,88 @@ interface AuthContextProps {
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
+  const { toast } = useToast();
+  
+  // Initialize auth and set up listeners
   useEffect(() => {
-    // Check if there's a user in localStorage
-    const storedUser = localStorage.getItem("pmix_user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (session && session.user) {
+          fetchUserProfile(session.user);
+        } else {
+          setUser(null);
+          setIsLoading(false);
+        }
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session && session.user) {
+        fetchUserProfile(session.user);
+      } else {
+        setIsLoading(false);
+      }
+    });
+
+    return () => {
+      subscription?.unsubscribe();
+    };
   }, []);
 
-  // In a real app, this would connect to an authentication API
+  // Function to fetch user profile from profiles table
+  const fetchUserProfile = async (authUser: User) => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', authUser.id)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching profile:', error);
+        setUser(null);
+        toast({
+          title: "Error",
+          description: "Failed to load user profile",
+          variant: "destructive",
+        });
+      } else if (data) {
+        setUser({
+          id: data.id,
+          name: data.name || '',
+          email: data.email || '',
+          role: data.role as "admin" | "owner" | "sales",
+          companyId: data.company_id || '',
+          companyName: data.company_name || ''
+        });
+      }
+    } catch (error) {
+      console.error('Profile fetch error:', error);
+      setUser(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
       
-      // Mock users for demo
-      const mockUsers: Record<string, User> = {
-        "admin@paradigmix.com": {
-          id: "1",
-          name: "Admin User",
-          email: "admin@paradigmix.com",
-          role: "admin",
-          companyId: "0",
-          companyName: "Paradigmix"
-        },
-        "owner@machinery.com": {
-          id: "2",
-          name: "Machinery Owner",
-          email: "owner@machinery.com",
-          role: "owner",
-          companyId: "1",
-          companyName: "Machinery Corp"
-        },
-        "sales@machinery.com": {
-          id: "3",
-          name: "Sales Rep",
-          email: "sales@machinery.com",
-          role: "sales",
-          companyId: "1",
-          companyName: "Machinery Corp"
-        }
-      };
-
-      const foundUser = mockUsers[email];
-      
-      if (foundUser && password === "password") {
-        setUser(foundUser);
-        localStorage.setItem("pmix_user", JSON.stringify(foundUser));
-      } else {
-        throw new Error("Invalid credentials");
+      if (error) {
+        throw error;
       }
-    } catch (error) {
+      
+      // User profile is fetched in the onAuthStateChange listener
+    } catch (error: any) {
       console.error("Login failed:", error);
       throw error;
     } finally {
@@ -84,9 +113,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem("pmix_user");
-    setUser(null);
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+    } catch (error) {
+      console.error("Logout failed:", error);
+      toast({
+        title: "Error",
+        description: "Failed to log out",
+        variant: "destructive",
+      });
+    }
   };
 
   return (

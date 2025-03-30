@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,10 +24,11 @@ const LoginForm = () => {
         title: "Login successful",
         description: "Welcome back!",
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Login error:", error);
       toast({
         title: "Login failed",
-        description: "Please check your credentials and try again.",
+        description: error.message || "Please check your credentials and try again.",
         variant: "destructive",
       });
     } finally {
@@ -77,8 +78,8 @@ const LoginForm = () => {
         </form>
       </CardContent>
       <CardFooter className="flex justify-between text-xs text-muted-foreground">
-        <p>Demo users:</p>
-        <p>admin@paradigmix.com / password</p>
+        <p>New to Pmix?</p>
+        <p>Register in the Supabase dashboard</p>
       </CardFooter>
     </Card>
   );
