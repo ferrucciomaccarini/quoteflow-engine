@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,13 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import StepWizard from "../common/StepWizard";
 import RiskAssessment from "./RiskAssessment";
 import { calculatePeriodicFee, calculatePresentValue, calculateServiceEvents, calculateServicePresentValue } from "@/utils/calculations";
+import { saveQuote } from "@/utils/quoteService";
+import { useAuth } from "@/context/AuthContext";
 
-// Customer needs step
 const CustomerNeedsStep = ({ data, updateData }: any) => {
   return (
     <div className="space-y-4">
@@ -92,9 +92,7 @@ const CustomerNeedsStep = ({ data, updateData }: any) => {
   );
 };
 
-// Equipment selection step
 const EquipmentSelectionStep = ({ data, updateData }: any) => {
-  // Mock machinery data
   const [machines] = useState([
     {
       id: "M1001",
@@ -164,9 +162,7 @@ const EquipmentSelectionStep = ({ data, updateData }: any) => {
   );
 };
 
-// Service selection step
 const ServiceSelectionStep = ({ data, updateData }: any) => {
-  // Mock service data
   const [services] = useState([
     {
       id: "S1001",
@@ -208,12 +204,10 @@ const ServiceSelectionStep = ({ data, updateData }: any) => {
       ? selectedServices.filter(id => id !== serviceId)
       : [...selectedServices, serviceId];
     
-    // Calculate service costs
     const selectedServiceObjects = services.filter(s => updatedServices.includes(s.id));
-    const timeHorizon = data.timeHorizon || 36; // default 36 months
-    const intensityHours = data.intensityHours || 2000; // default 2000 hours per year
+    const timeHorizon = data.timeHorizon || 36;
+    const intensityHours = data.intensityHours || 2000;
     
-    // Calculate service events and costs
     let totalServiceCost = 0;
     const allServiceEvents = [];
     
@@ -221,16 +215,14 @@ const ServiceSelectionStep = ({ data, updateData }: any) => {
       let serviceCost = 0;
       
       if (service.category === "Insurance") {
-        // For insurance, calculate monthly cost over the contract duration
         serviceCost = (service.fixedCost || 0) * timeHorizon;
       } else {
-        // For maintenance, calculate based on usage pattern
         const serviceIntervalHours = service.intervalType === "hours" ? service.intervalValue : null;
         const serviceIntervalMonths = service.intervalType === "months" ? service.intervalValue : null;
         
         const events = calculateServiceEvents(
           intensityHours,
-          timeHorizon / 12, // convert months to years
+          timeHorizon / 12,
           serviceIntervalHours || 0,
           serviceIntervalMonths,
           service.partsCost,
@@ -240,7 +232,6 @@ const ServiceSelectionStep = ({ data, updateData }: any) => {
         
         allServiceEvents.push(...events);
         
-        // Calculate the service cost based on events
         events.forEach(event => {
           serviceCost += event.cost;
         });
@@ -249,8 +240,7 @@ const ServiceSelectionStep = ({ data, updateData }: any) => {
       totalServiceCost += serviceCost;
     }
     
-    // Calculate present value of service costs
-    const baseRate = data.baseRate || 5; // default 5%
+    const baseRate = data.baseRate || 5;
     const servicesPresentValue = allServiceEvents.length > 0 
       ? calculateServicePresentValue(allServiceEvents, baseRate) 
       : totalServiceCost;
@@ -356,41 +346,34 @@ const ServiceSelectionStep = ({ data, updateData }: any) => {
   );
 };
 
-// Financial parameters step
 const FinancialParametersStep = ({ data, updateData }: any) => {
-  // Calculate total primary risk
   const machineValue = data.machineValue || 0;
   const servicesPresentValue = data.servicesPresentValue || 0;
   const primaryRisk = machineValue + servicesPresentValue;
   
-  // Update the data with the primary risk value
   React.useEffect(() => {
     updateData({ primaryRisk });
   }, [machineValue, servicesPresentValue, primaryRisk, updateData]);
   
-  // Calculate periodic fees when financial parameters change
   React.useEffect(() => {
-    const contractDuration = data.contractDuration || 36; // default 36 months
-    const baseRate = data.baseRate || 5; // default 5%
-    const bureauSpread = data.bureauSpread || 1; // default 1%
-    const ratingSpread = data.ratingSpread || 0.5; // default 0.5%
+    const contractDuration = data.contractDuration || 36;
+    const baseRate = data.baseRate || 5;
+    const bureauSpread = data.bureauSpread || 1;
+    const ratingSpread = data.ratingSpread || 0.5;
     const totalRate = baseRate + bureauSpread + ratingSpread;
     
-    // Calculate equipment fee (CanoBrkE)
     const equipmentFee = calculatePeriodicFee(
       machineValue,
       totalRate,
       contractDuration
     );
     
-    // Calculate services fee (CanoBrkS)
     const servicesFee = calculatePeriodicFee(
       servicesPresentValue,
       totalRate,
       contractDuration
     );
     
-    // Calculate total fee before risks (CanoBrkA)
     const totalFeeBeforeRisks = equipmentFee + servicesFee;
     
     updateData({
@@ -437,7 +420,6 @@ const FinancialParametersStep = ({ data, updateData }: any) => {
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Credit Assessment */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Customer Credit Assessment</CardTitle>
@@ -454,8 +436,7 @@ const FinancialParametersStep = ({ data, updateData }: any) => {
                 onChange={(e) => {
                   const value = parseInt(e.target.value);
                   if (value >= 1 && value <= 10) {
-                    // Calculate bureau spread based on credit score (example formula)
-                    const bureauSpread = (11 - value) * 0.2; // Higher score = lower spread
+                    const bureauSpread = (11 - value) * 0.2;
                     updateData({ creditBureau: value, bureauSpread });
                   }
                 }}
@@ -473,8 +454,7 @@ const FinancialParametersStep = ({ data, updateData }: any) => {
                 onChange={(e) => {
                   const value = parseInt(e.target.value);
                   if (value >= 1 && value <= 10) {
-                    // Calculate rating spread based on internal rating (example formula)
-                    const ratingSpread = (11 - value) * 0.1; // Higher score = lower spread
+                    const ratingSpread = (11 - value) * 0.1;
                     updateData({ internalRating: value, ratingSpread });
                   }
                 }}
@@ -483,7 +463,6 @@ const FinancialParametersStep = ({ data, updateData }: any) => {
           </CardContent>
         </Card>
         
-        {/* Contract Parameters */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Contract Parameters</CardTitle>
@@ -515,7 +494,6 @@ const FinancialParametersStep = ({ data, updateData }: any) => {
         </Card>
       </div>
 
-      {/* Fee Summary */}
       <Card className="bg-primary/5 border-primary/20">
         <CardHeader>
           <CardTitle>Fee Calculation (Before Risks)</CardTitle>
@@ -562,23 +540,19 @@ const FinancialParametersStep = ({ data, updateData }: any) => {
   );
 };
 
-// Summary step
 const SummaryStep = ({ data, updateData }: any) => {
-  // Calculate the risk fee
   React.useEffect(() => {
     if (data.riskVariables) {
       const totalResidualRisk = data.riskVariables.reduce((sum: number, risk: any) => sum + risk.residualRisk, 0);
       const contractDuration = data.contractDuration || 36;
       const totalRate = data.totalRate || 5;
       
-      // Calculate risk fee (CanoRsk)
       const riskFee = calculatePeriodicFee(
         totalResidualRisk,
         totalRate,
         contractDuration
       );
       
-      // Calculate total fee (CanoTot)
       const totalFee = (data.equipmentFee || 0) + (data.servicesFee || 0) + riskFee;
       
       updateData({
@@ -774,14 +748,43 @@ const SummaryStep = ({ data, updateData }: any) => {
 const QuoteCreation = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
   
-  const handleComplete = (data: any) => {
+  const handleComplete = async (data: any) => {
     console.log("Quote completed:", data);
-    toast({
-      title: "Quote Created",
-      description: "Your EaaS quote has been successfully created.",
-    });
-    navigate("/quotes");
+    
+    try {
+      if (!isAuthenticated) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to save quotes.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const quoteData = {
+        ...data,
+        status: "Pending",
+        createdAt: new Date().toISOString()
+      };
+      
+      await saveQuote(quoteData);
+      
+      toast({
+        title: "Quote Created",
+        description: "Your EaaS quote has been successfully created and stored.",
+      });
+      
+      navigate("/quotes");
+    } catch (error) {
+      console.error("Failed to save quote:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save the quote. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
   
   const steps = [
@@ -836,7 +839,6 @@ const QuoteCreation = () => {
         steps={steps}
         onComplete={handleComplete}
         initialData={{
-          // Default values
           timeHorizon: 36,
           intensityHours: 2000,
           dailyShifts: 1,
