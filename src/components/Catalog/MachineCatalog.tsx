@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -26,6 +25,17 @@ interface Machine {
   customer_name?: string;
 }
 
+interface MachineInsert {
+  user_id: string;
+  name: string;
+  category: string;
+  acquisition_value?: number;
+  daily_rate?: number;
+  hourly_rate?: number;
+  description?: string | null;
+  customer_id?: string | null;
+}
+
 const MachineCatalog = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -34,7 +44,7 @@ const MachineCatalog = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [customers, setCustomers] = useState<{id: string, name: string}[]>([]);
-  const [newMachine, setNewMachine] = useState<Partial<Machine>>({
+  const [newMachine, setNewMachine] = useState<Partial<MachineInsert>>({
     name: "",
     category: "",
     acquisition_value: 0,
@@ -44,7 +54,6 @@ const MachineCatalog = () => {
     customer_id: null
   });
 
-  // Fetch machines
   useEffect(() => {
     const fetchMachines = async () => {
       if (!user) return;
@@ -58,7 +67,6 @@ const MachineCatalog = () => {
 
         if (error) throw error;
         
-        // Transform data to include customer_name
         const transformedData = data.map(item => ({
           ...item,
           customer_name: item.customers?.name || "No Customer"
@@ -110,18 +118,21 @@ const MachineCatalog = () => {
     }
 
     try {
+      const machineData: MachineInsert = {
+        ...newMachine,
+        name: newMachine.name,
+        category: newMachine.category,
+        user_id: user.id
+      };
+
       const { data, error } = await supabase
         .from('machines')
-        .insert({
-          ...newMachine,
-          user_id: user.id
-        })
+        .insert(machineData)
         .select('*, customers(name)')
         .single();
 
       if (error) throw error;
 
-      // Add the newly created machine to the state
       setMachines([...machines, {
         ...data,
         customer_name: data.customers?.name || "No Customer"
@@ -164,7 +175,6 @@ const MachineCatalog = () => {
 
       if (error) throw error;
 
-      // Remove the deleted machine from state
       setMachines(machines.filter(machine => machine.id !== id));
       
       toast({

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -19,13 +18,26 @@ interface Service {
   name: string;
   category: string;
   machine_category: string;
-  interval_type: "hours" | "months";
+  interval_type: string;
   interval_value: number;
   parts_cost: number;
   labor_cost: number;
   consumables_cost: number;
   description: string | null;
   total_cost?: number;
+}
+
+interface ServiceInsert {
+  user_id: string;
+  name: string;
+  category: string;
+  machine_category: string;
+  interval_type: string;
+  interval_value?: number;
+  parts_cost?: number;
+  labor_cost?: number;
+  consumables_cost?: number;
+  description?: string | null;
 }
 
 const ServiceCatalog = () => {
@@ -35,7 +47,7 @@ const ServiceCatalog = () => {
   const [services, setServices] = useState<Service[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [newService, setNewService] = useState<Partial<Service>>({
+  const [newService, setNewService] = useState<Partial<ServiceInsert>>({
     name: "",
     category: "Maintenance",
     machine_category: "",
@@ -47,7 +59,6 @@ const ServiceCatalog = () => {
     description: ""
   });
 
-  // Fetch services from Supabase
   useEffect(() => {
     const fetchServices = async () => {
       if (!user) return;
@@ -61,13 +72,12 @@ const ServiceCatalog = () => {
 
         if (error) throw error;
         
-        // Calculate total cost for each service
         const servicesWithTotal = data.map(service => ({
           ...service,
           total_cost: (service.parts_cost || 0) + (service.labor_cost || 0) + (service.consumables_cost || 0)
         }));
 
-        setServices(servicesWithTotal);
+        setServices(servicesWithTotal as Service[]);
       } catch (error: any) {
         console.error('Error fetching services:', error);
         toast({
@@ -96,22 +106,27 @@ const ServiceCatalog = () => {
     }
 
     try {
+      const serviceData: ServiceInsert = {
+        ...newService,
+        name: newService.name,
+        category: newService.category,
+        machine_category: newService.machine_category,
+        interval_type: newService.interval_type || "hours",
+        user_id: user.id
+      };
+
       const { data, error } = await supabase
         .from('services')
-        .insert({
-          ...newService,
-          user_id: user.id
-        })
+        .insert(serviceData)
         .select()
         .single();
 
       if (error) throw error;
 
-      // Add the newly created service to the state
       const newServiceWithTotal = {
         ...data,
         total_cost: (data.parts_cost || 0) + (data.labor_cost || 0) + (data.consumables_cost || 0)
-      };
+      } as Service;
       
       setServices([...services, newServiceWithTotal]);
 
@@ -154,7 +169,6 @@ const ServiceCatalog = () => {
 
       if (error) throw error;
 
-      // Remove the deleted service from state
       setServices(services.filter(service => service.id !== id));
       
       toast({

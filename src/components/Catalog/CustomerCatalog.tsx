@@ -23,6 +23,16 @@ interface Customer {
   machine_count?: number;
 }
 
+// Define the database insert type to match Supabase schema
+interface CustomerInsert {
+  user_id: string;
+  name: string;
+  contact_person?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+}
+
 const CustomerCatalog = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -30,7 +40,7 @@ const CustomerCatalog = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [newCustomer, setNewCustomer] = useState<Partial<Customer>>({
+  const [newCustomer, setNewCustomer] = useState<Partial<CustomerInsert>>({
     name: "",
     contact_person: "",
     email: "",
@@ -91,12 +101,16 @@ const CustomerCatalog = () => {
     }
 
     try {
+      // Create the insert object with required name property
+      const customerData: CustomerInsert = {
+        ...newCustomer,
+        name: newCustomer.name,
+        user_id: user.id,
+      };
+
       const { data, error } = await supabase
         .from('customers')
-        .insert({
-          ...newCustomer,
-          user_id: user.id
-        })
+        .insert(customerData)
         .select()
         .single();
 

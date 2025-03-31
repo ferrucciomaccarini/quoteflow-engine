@@ -9,12 +9,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-// Define the Column interface with required accessorKey
-interface Column<T> {
+// Update Column interface to make cell optional
+export interface Column<T> {
   header: string;
-  accessorKey: keyof T | string; // Required property
+  accessorKey: string; // Required property
   id?: string;
-  cell?: (info: any) => React.ReactNode;
+  cell?: (info: T) => React.ReactNode;
 }
 
 interface DataTableProps<T> {
@@ -73,10 +73,7 @@ export function DataTable<T>({
                 {columns.map((column, colIndex) => (
                   <TableCell key={`${rowIndex}-${colIndex}`}>
                     {column.cell
-                      ? column.cell({ 
-                          getValue: () => getValue(row, column.accessorKey.toString()),
-                          row: { original: row }
-                        })
+                      ? column.cell(row)
                       : getValue(row, column.accessorKey.toString())}
                   </TableCell>
                 ))}

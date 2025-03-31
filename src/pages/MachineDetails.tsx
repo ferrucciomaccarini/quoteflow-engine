@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MainLayout from "@/components/Layout/MainLayout";
@@ -30,8 +29,13 @@ interface Service {
   id: string;
   name: string;
   category: string;
+  machine_category: string;
   interval_type: string;
   interval_value: number;
+  parts_cost: number;
+  labor_cost: number;
+  consumables_cost: number;
+  description?: string | null;
   total_cost?: number;
 }
 
@@ -40,6 +44,12 @@ interface MachineService {
   machine_id: string;
   service_id: string;
   service: Service;
+}
+
+interface Column<T> {
+  header: string;
+  accessorKey: string;
+  cell?: (row: T) => React.ReactNode;
 }
 
 const MachineDetails = () => {
@@ -54,7 +64,10 @@ const MachineDetails = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
 
-  // Fetch machine details
+  const calculateTotalCost = (service: Service): number => {
+    return (service.parts_cost || 0) + (service.labor_cost || 0) + (service.consumables_cost || 0);
+  };
+
   useEffect(() => {
     const fetchMachineDetails = async () => {
       if (!user || !id) return;
@@ -62,7 +75,6 @@ const MachineDetails = () => {
       try {
         setIsLoading(true);
         
-        // Fetch machine details
         const { data: machineData, error: machineError } = await supabase
           .from('machines')
           .select(`
@@ -80,7 +92,6 @@ const MachineDetails = () => {
           customer_name: machineData.customers?.name
         });
 
-        // Fetch services attached to this machine
         const { data: machineServices, error: servicesError } = await supabase
           .from('machine_services')
           .select(`
@@ -93,7 +104,6 @@ const MachineDetails = () => {
         
         setServices(machineServices);
 
-        // Fetch all available services
         const { data: allServices, error: allServicesError } = await supabase
           .from('services')
           .select('*')
@@ -101,14 +111,12 @@ const MachineDetails = () => {
 
         if (allServicesError) throw allServicesError;
         
-        // Filter out services that are already attached to this machine
         const attachedServiceIds = machineServices.map(ms => ms.service_id);
         const filteredServices = allServices.filter(service => !attachedServiceIds.includes(service.id));
         
-        // Calculate total cost for each service
         const servicesWithTotal = filteredServices.map(service => ({
           ...service,
-          total_cost: (service.parts_cost || 0) + (service.labor_cost || 0) + (service.consumables_cost || 0)
+          total_cost: calculateTotalCost(service)
         }));
         
         setAvailableServices(servicesWithTotal);
@@ -147,14 +155,11 @@ const MachineDetails = () => {
 
       if (error) throw error;
 
-      // Update state with the new services
       setServices([...services, ...data]);
       
-      // Remove the added services from available services
       const newlyAddedServiceIds = data.map(item => item.service_id);
       setAvailableServices(availableServices.filter(service => !newlyAddedServiceIds.includes(service.id)));
       
-      // Clear selection
       setSelectedServices([]);
       setIsAddDialogOpen(false);
       
@@ -174,7 +179,6 @@ const MachineDetails = () => {
 
   const handleRemoveService = async (machineServiceId: string) => {
     try {
-      // Find the machine service to get the service info before removal
       const machineService = services.find(ms => ms.id === machineServiceId);
       
       const { error } = await supabase
@@ -184,10 +188,8 @@ const MachineDetails = () => {
 
       if (error) throw error;
 
-      // Update services state by removing the deleted one
       setServices(services.filter(ms => ms.id !== machineServiceId));
       
-      // Add the removed service back to available services if it was a service entry
       if (machineService && machineService.service) {
         setAvailableServices([...availableServices, machineService.service]);
       }
@@ -206,19 +208,19 @@ const MachineDetails = () => {
     }
   };
 
-  const serviceColumns = [
+  const serviceColumns: Column<MachineService>[] = [
     { header: "Service Name", accessorKey: "service.name" },
     { header: "Category", accessorKey: "service.category" },
     { 
       header: "Interval", 
+      accessorKey: "interval",
       cell: (row: MachineService) => `${row.service.interval_value} ${row.service.interval_type}`
     },
     {
       header: "Total Cost", 
+      accessorKey: "totalCost",
       cell: (row: MachineService) => {
-        const totalCost = (row.service.parts_cost || 0) + 
-                         (row.service.labor_cost || 0) + 
-                         (row.service.consumables_cost || 0);
+        const totalCost = calculateTotalCost(row.service);
         return `$${totalCost.toFixed(2)}`;
       }
     },
