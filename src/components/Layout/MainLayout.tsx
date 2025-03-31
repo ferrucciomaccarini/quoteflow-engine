@@ -3,6 +3,7 @@ import React, { ReactNode } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Navigate } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
+import Logo from "@/components/common/Logo";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -28,6 +29,9 @@ const MainLayout = ({ children }: MainLayoutProps) => {
       <Sidebar />
       <div className="flex-1 overflow-x-hidden overflow-y-auto bg-background">
         <header className="bg-white shadow-sm p-4 border-b">
+          <div className="flex flex-col items-center mb-2">
+            <Logo />
+          </div>
           <div className="flex justify-between items-center">
             <h1 className="text-xl font-semibold text-gray-800">
               {user?.companyName || "Dashboard"}

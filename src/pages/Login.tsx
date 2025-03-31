@@ -4,6 +4,7 @@ import LoginForm from "@/components/Auth/LoginForm";
 import RegisterForm from "@/components/Auth/RegisterForm";
 import { useAuth } from "@/context/AuthContext";
 import { Navigate } from "react-router-dom";
+import Logo from "@/components/common/Logo";
 
 const Login = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -27,7 +28,9 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-muted/30 p-4">
-      <div className="mb-8 text-center">
+      <Logo className="mb-6" />
+      
+      <div className="mb-6 text-center">
         <h1 className="text-4xl font-bold text-pmix-blue mb-2">Pmix EaaS Pricing</h1>
         <p className="text-gray-600 max-w-md">
           Equipment as a Service quoting platform for machinery owners
