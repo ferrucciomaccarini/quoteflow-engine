@@ -74,10 +74,10 @@ export function DataTable<T>({
                   <TableCell key={`${rowIndex}-${colIndex}`}>
                     {column.cell
                       ? column.cell({ 
-                          getValue: () => getValue(row, column.accessorKey),
+                          getValue: () => getValue(row, column.accessorKey.toString()),
                           row: { original: row }
                         })
-                      : getValue(row, column.accessorKey as string)}
+                      : getValue(row, column.accessorKey.toString())}
                   </TableCell>
                 ))}
               </TableRow>
