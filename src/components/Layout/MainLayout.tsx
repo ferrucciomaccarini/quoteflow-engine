@@ -9,7 +9,7 @@ interface MainLayoutProps {
 }
 
 const MainLayout = ({ children }: MainLayoutProps) => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
     return (
@@ -27,6 +27,20 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
       <div className="flex-1 overflow-x-hidden overflow-y-auto bg-background">
+        <header className="bg-white shadow-sm p-4 border-b">
+          <div className="flex justify-between items-center">
+            <h1 className="text-xl font-semibold text-gray-800">
+              {user?.companyName || "Dashboard"}
+            </h1>
+            <div className="text-sm text-gray-600">
+              {user?.role === "owner" && (
+                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                  Owner
+                </span>
+              )}
+            </div>
+          </div>
+        </header>
         <main className="p-6">
           {children}
         </main>

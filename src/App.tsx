@@ -20,6 +20,7 @@ import ServiceDetails from "./pages/ServiceDetails";
 import CustomerDetails from "./pages/CustomerDetails";
 import CreditBureauSpreads from "./pages/CreditBureauSpreads";
 import InternalRatingSpreads from "./pages/InternalRatingSpreads";
+import Owners from "./pages/Owners";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +46,7 @@ const App = () => (
             <Route path="/risk-assessment" element={<RiskAssessment />} />
             <Route path="/credit-bureau-spreads" element={<CreditBureauSpreads />} />
             <Route path="/internal-rating-spreads" element={<InternalRatingSpreads />} />
+            <Route path="/owners" element={<Owners />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

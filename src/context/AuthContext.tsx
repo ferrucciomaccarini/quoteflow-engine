@@ -20,6 +20,8 @@ interface AuthContextProps {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
+  isAdmin: boolean;
+  isOwner: boolean;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -163,7 +165,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         login,
         register,
-        logout
+        logout,
+        isAdmin: user?.role === "admin",
+        isOwner: user?.role === "owner"
       }}
     >
       {children}
