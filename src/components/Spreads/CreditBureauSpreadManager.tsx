@@ -251,23 +251,23 @@ export default function CreditBureauSpreadManager() {
     {
       header: "Spread Rate (%)",
       accessorKey: "spread_rate",
-      cell: (info) => (parseFloat(info.getValue().toString()) * 100).toFixed(2) + "%",
+      cell: (info) => (parseFloat(String(info.spread_rate)) * 100).toFixed(2) + "%",
     },
     {
       header: "Valid From",
       accessorKey: "valid_from",
-      cell: (info) => format(new Date(info.getValue()), "PPP"),
+      cell: (info) => format(new Date(info.valid_from), "PPP"),
     },
     {
       header: "Valid To",
       accessorKey: "valid_to",
-      cell: (info) => info.getValue() ? format(new Date(info.getValue()), "PPP") : "Current",
+      cell: (info) => info.valid_to ? format(new Date(info.valid_to), "PPP") : "Current",
     },
     {
       header: "Status",
       accessorKey: "valid_to",
       cell: (info) => {
-        const validTo = info.getValue();
+        const validTo = info.valid_to;
         const isCurrent = !validTo || new Date(validTo) > new Date();
         
         return isCurrent ? (
@@ -281,7 +281,7 @@ export default function CreditBureauSpreadManager() {
       header: "Actions",
       accessorKey: "id",
       cell: (info) => {
-        const spread = spreads.find(s => s.id === info.getValue());
+        const spread = spreads.find(s => s.id === info.id);
         if (!spread) return null;
         
         const isCurrent = !spread.valid_to || new Date(spread.valid_to) > new Date();
