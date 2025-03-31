@@ -1,133 +1,194 @@
-import React from "react";
-import { useAuth } from "@/context/AuthContext";
-import { Link, useLocation } from "react-router-dom";
-import { 
-  LayoutDashboard, 
-  Wrench, 
-  ClipboardList, 
-  Menu, 
-  Settings, 
+
+import React, { useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import {
+  BarChart,
+  FileText,
+  Package,
+  Cog,
   LogOut,
-  BarChart3,
+  ChevronRight,
+  ChevronDown,
+  Wrench,
+  Truck,
+  Users,
   AlertTriangle,
-  Users
+  PercentSquare,
+  Percent,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-interface NavItemProps {
-  to: string;
+interface SidebarItemProps {
   icon: React.ElementType;
   label: string;
-  active: boolean;
+  to: string;
+  active?: boolean;
+  onClick?: () => void;
 }
 
-const NavItem = ({ to, icon: Icon, label, active }: NavItemProps) => {
+const SidebarItem = ({ icon: Icon, label, to, active, onClick }: SidebarItemProps) => (
+  <Link
+    to={to}
+    className={cn(
+      "flex items-center gap-3 rounded-lg px-3 py-2 text-gray-500 transition-all hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-50",
+      active && "bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-50"
+    )}
+    onClick={onClick}
+  >
+    <Icon className="h-4 w-4" />
+    <span>{label}</span>
+  </Link>
+);
+
+interface SidebarCollapseProps {
+  icon: React.ElementType;
+  label: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}
+
+const SidebarCollapse = ({ icon: Icon, label, children, defaultOpen = false }: SidebarCollapseProps) => {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+  
   return (
-    <Link to={to}>
-      <Button
-        variant="ghost"
-        className={cn(
-          "w-full justify-start gap-2 px-2",
-          active && "bg-muted"
-        )}
-      >
-        <Icon size={20} />
-        <span className="truncate">{label}</span>
-      </Button>
-    </Link>
+    <Collapsible
+      open={isOpen}
+      onOpenChange={setIsOpen}
+      className="w-full"
+    >
+      <CollapsibleTrigger asChild>
+        <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-500 transition-all hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-50 cursor-pointer">
+          <Icon className="h-4 w-4" />
+          <span>{label}</span>
+          <div className="ml-auto">
+            {isOpen ? (
+              <ChevronDown className="h-4 w-4" />
+            ) : (
+              <ChevronRight className="h-4 w-4" />
+            )}
+          </div>
+        </div>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="pl-10 space-y-1">
+        {children}
+      </CollapsibleContent>
+    </Collapsible>
   );
 };
 
-const useMobileSidebar = () => {
-  const isMobile = useIsMobile();
-  const [sidebarOpen, setSidebarOpen] = React.useState(false);
-  
-  return { isMobile, sidebarOpen, setSidebarOpen };
-};
-
-const Sidebar = () => {
-  const { logout, user } = useAuth();
+export function Sidebar() {
   const location = useLocation();
-  const { isMobile, sidebarOpen, setSidebarOpen } = useMobileSidebar();
+  const { isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const navItems = [
-    { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { path: "/machines", label: "Machines", icon: Wrench },
-    { path: "/services", label: "Services", icon: ClipboardList },
-    { path: "/customers", label: "Customers", icon: Users },
-    { path: "/quotes", label: "Quotes", icon: ClipboardList },
-    { path: "/risk-assessment", label: "Risk Assessment", icon: AlertTriangle },
-  ];
-
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
+  const handleLogout = async () => {
+    await logout();
+    toast({
+      title: "Logged out",
+      description: "You have been logged out successfully",
+    });
+    navigate("/login");
   };
 
-  if (isMobile && !sidebarOpen) {
-    return (
-      <div className="fixed top-0 left-0 p-3 z-40">
-        <Button variant="ghost" size="icon" onClick={toggleSidebar}>
-          <Menu />
-        </Button>
-      </div>
-    );
+  if (!isAuthenticated) {
+    return null;
   }
 
   return (
-    <div
-      className={cn(
-        "h-screen flex flex-col bg-muted/10 border-r border-border overflow-auto",
-        isMobile
-          ? "fixed z-40 w-[240px] transition-all duration-300 ease-in-out"
-          : "w-[240px] sticky top-0"
-      )}
-    >
-      <div className="p-4 border-b border-border flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Pmix EaaS</h1>
-        {isMobile && (
-          <Button variant="ghost" size="sm" onClick={toggleSidebar}>
-            <Menu size={18} />
-          </Button>
-        )}
+    <div className="flex h-full w-64 flex-col border-r bg-background">
+      <div className="flex h-14 items-center border-b px-4">
+        <Link to="/" className="flex items-center gap-2 font-semibold">
+          <Package className="h-6 w-6" />
+          <span className="text-lg">EaaS Portal</span>
+        </Link>
       </div>
-      <div className="flex-1 py-4 px-2 space-y-1">
-        {navItems.map((item) => (
-          <NavItem
-            key={item.path}
-            to={item.path}
-            icon={item.icon}
-            label={item.label}
-            active={location.pathname === item.path}
+      <div className="flex-1 overflow-auto py-2">
+        <nav className="grid items-start px-2 text-sm font-medium space-y-1">
+          <SidebarItem
+            icon={BarChart}
+            label="Dashboard"
+            to="/dashboard"
+            active={location.pathname === "/dashboard"}
           />
-        ))}
-      </div>
-      <div className="p-4 border-t border-border mt-auto">
-        <div className="mb-4">
-          <p className="text-sm font-medium truncate">{user?.name}</p>
-          <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-        </div>
-        <div className="flex space-x-2">
-          <Button variant="outline" size="sm" className="w-full gap-1" asChild>
-            <Link to="/settings">
-              <Settings size={16} />
-              <span>Settings</span>
-            </Link>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full gap-1"
-            onClick={logout}
+          
+          <SidebarItem
+            icon={Truck}
+            label="Machines"
+            to="/machines"
+            active={location.pathname === "/machines"}
+          />
+          
+          <SidebarItem
+            icon={Wrench}
+            label="Services"
+            to="/services"
+            active={location.pathname === "/services"}
+          />
+          
+          <SidebarItem
+            icon={Users}
+            label="Customers"
+            to="/customers"
+            active={location.pathname === "/customers"}
+          />
+          
+          <SidebarItem
+            icon={FileText}
+            label="Quotes"
+            to="/quotes"
+            active={location.pathname === "/quotes"}
+          />
+          
+          <SidebarItem
+            icon={AlertTriangle}
+            label="Risk Assessment"
+            to="/risk-assessment"
+            active={location.pathname === "/risk-assessment"}
+          />
+          
+          <SidebarCollapse
+            icon={PercentSquare}
+            label="Spread Management"
+            defaultOpen={location.pathname.includes("spreads")}
           >
-            <LogOut size={16} />
-            <span>Logout</span>
+            <SidebarItem
+              icon={Percent}
+              label="Bureau Spreads"
+              to="/credit-bureau-spreads"
+              active={location.pathname === "/credit-bureau-spreads"}
+            />
+            <SidebarItem
+              icon={Percent}
+              label="Rating Spreads"
+              to="/internal-rating-spreads"
+              active={location.pathname === "/internal-rating-spreads"}
+            />
+          </SidebarCollapse>
+        </nav>
+      </div>
+      <div className="mt-auto p-4 border-t">
+        <div className="flex gap-2">
+          <SidebarItem 
+            icon={Cog} 
+            label="Settings" 
+            to="/settings"
+            active={location.pathname === "/settings"}
+          />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="ml-auto"
+            onClick={handleLogout}
+          >
+            <LogOut className="h-5 w-5" />
           </Button>
         </div>
       </div>
     </div>
   );
-};
-
-export default Sidebar;
+}

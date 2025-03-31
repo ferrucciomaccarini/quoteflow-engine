@@ -9,6 +9,39 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      credit_bureau_spreads: {
+        Row: {
+          bureau_score: number
+          created_at: string
+          id: string
+          spread_rate: number
+          updated_at: string
+          user_id: string
+          valid_from: string
+          valid_to: string | null
+        }
+        Insert: {
+          bureau_score: number
+          created_at?: string
+          id?: string
+          spread_rate: number
+          updated_at?: string
+          user_id: string
+          valid_from?: string
+          valid_to?: string | null
+        }
+        Update: {
+          bureau_score?: number
+          created_at?: string
+          id?: string
+          spread_rate?: number
+          updated_at?: string
+          user_id?: string
+          valid_from?: string
+          valid_to?: string | null
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           address: string | null
@@ -42,6 +75,39 @@ export type Database = {
           phone?: string | null
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      internal_rating_spreads: {
+        Row: {
+          created_at: string
+          id: string
+          rating_score: number
+          spread_rate: number
+          updated_at: string
+          user_id: string
+          valid_from: string
+          valid_to: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          rating_score: number
+          spread_rate: number
+          updated_at?: string
+          user_id: string
+          valid_from?: string
+          valid_to?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          rating_score?: number
+          spread_rate?: number
+          updated_at?: string
+          user_id?: string
+          valid_from?: string
+          valid_to?: string | null
         }
         Relationships: []
       }
@@ -268,7 +334,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_current_bureau_spread: {
+        Args: {
+          score: number
+        }
+        Returns: number
+      }
+      get_current_rating_spread: {
+        Args: {
+          score: number
+        }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never

@@ -18,6 +18,8 @@ import Customers from "./pages/Customers";
 import MachineDetails from "./pages/MachineDetails";
 import ServiceDetails from "./pages/ServiceDetails";
 import CustomerDetails from "./pages/CustomerDetails";
+import CreditBureauSpreads from "./pages/CreditBureauSpreads";
+import InternalRatingSpreads from "./pages/InternalRatingSpreads";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +43,8 @@ const App = () => (
             <Route path="/quotes" element={<Quotes />} />
             <Route path="/quotes/new" element={<NewQuote />} />
             <Route path="/risk-assessment" element={<RiskAssessment />} />
+            <Route path="/credit-bureau-spreads" element={<CreditBureauSpreads />} />
+            <Route path="/internal-rating-spreads" element={<InternalRatingSpreads />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
