@@ -18,8 +18,13 @@ interface RiskVariable {
   residualRisk: number;
 }
 
+interface RiskData {
+  riskVariables: RiskVariable[];
+  [key: string]: any;
+}
+
 const RiskAssessmentTool = () => {
-  const [data, setData] = useState<any>({
+  const [data, setData] = useState<RiskData>({
     riskVariables: []
   });
   const [isLoading, setIsLoading] = useState(true);
@@ -32,13 +37,15 @@ const RiskAssessmentTool = () => {
       if (!user) return;
       
       try {
+        // Look for risk assessment data in quotes table with assessment_type='risk'
         const { data: savedData, error } = await supabase
-          .from('risk_assessments')
+          .from('quotes')
           .select('*')
           .eq('user_id', user.id)
+          .eq('status', 'risk_assessment')
           .order('created_at', { ascending: false })
           .limit(1)
-          .single();
+          .maybeSingle();
           
         if (error) {
           console.log("No saved risk assessment found or error:", error);
@@ -49,11 +56,20 @@ const RiskAssessmentTool = () => {
           return;
         }
         
-        if (savedData) {
-          setData(savedData.risk_data);
+        if (savedData && savedData.quote_data) {
+          // Extract risk data from the quote_data JSON field
+          const riskData = savedData.quote_data as RiskData;
+          setData(riskData);
+        } else {
+          setData({
+            riskVariables: getDefaultRiskVariables()
+          });
         }
       } catch (error) {
         console.error("Error loading risk assessment:", error);
+        setData({
+          riskVariables: getDefaultRiskVariables()
+        });
       } finally {
         setIsLoading(false);
       }
@@ -63,7 +79,7 @@ const RiskAssessmentTool = () => {
   }, [user]);
 
   const getDefaultRiskVariables = (): RiskVariable[] => {
-    const defaultRiskVariables = [
+    const defaultRiskVariables: RiskVariable[] = [
       // Finance domain
       { id: "F1", domain: "Finance", variable: "Credit Risk", frequency: 20, maxLoss: 10000, mitigation: 60, residualRisk: 0 },
       { id: "F2", domain: "Finance", variable: "Currency Risk", frequency: 30, maxLoss: 5000, mitigation: 70, residualRisk: 0 },
@@ -97,7 +113,7 @@ const RiskAssessmentTool = () => {
   };
 
   const updateData = (newData: any) => {
-    setData((prev: any) => ({ ...prev, ...newData }));
+    setData((prev: RiskData) => ({ ...prev, ...newData }));
   };
 
   const handleSave = async () => {
@@ -116,13 +132,19 @@ const RiskAssessmentTool = () => {
       // Calculate the total risk from all variables
       const totalRisk = data.riskVariables.reduce((sum: number, risk: RiskVariable) => sum + risk.residualRisk, 0);
       
+      // Save as a quote with status='risk_assessment'
       const { error } = await supabase
-        .from('risk_assessments')
+        .from('quotes')
         .insert({
           user_id: user.id,
-          risk_data: data,
-          total_risk: totalRisk,
-          company_id: user.companyId || null
+          customer_name: "Risk Assessment",
+          machine_name: "N/A",
+          machine_value: totalRisk,
+          time_horizon: 12,
+          contract_duration: 12,
+          total_fee: totalRisk,
+          status: "risk_assessment",
+          quote_data: data
         });
         
       if (error) throw error;

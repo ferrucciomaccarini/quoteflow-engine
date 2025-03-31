@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { useMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface NavItemProps {
   to: string;
@@ -40,10 +40,18 @@ const NavItem = ({ to, icon: Icon, label, active }: NavItemProps) => {
   );
 };
 
+// Create a custom hook for mobile sidebar state
+const useMobileSidebar = () => {
+  const isMobile = useIsMobile();
+  const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  
+  return { isMobile, sidebarOpen, setSidebarOpen };
+};
+
 const Sidebar = () => {
   const { logout, user } = useAuth();
   const location = useLocation();
-  const { isMobile, sidebarOpen, setSidebarOpen } = useMobile();
+  const { isMobile, sidebarOpen, setSidebarOpen } = useMobileSidebar();
 
   const navItems = [
     { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
