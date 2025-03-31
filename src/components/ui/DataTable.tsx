@@ -9,10 +9,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+// Update the Column interface to make it compatible with QuoteList
 interface Column<T> {
   header: string;
-  accessorKey: keyof T | string;
-  cell?: (row: T) => React.ReactNode;
+  accessorKey: keyof T | string; // Required property
+  id?: string;
+  cell?: (info: any) => React.ReactNode;
 }
 
 interface DataTableProps<T> {
@@ -71,7 +73,10 @@ export function DataTable<T>({
                 {columns.map((column, colIndex) => (
                   <TableCell key={`${rowIndex}-${colIndex}`}>
                     {column.cell
-                      ? column.cell(row)
+                      ? column.cell({ 
+                          getValue: () => getValue(row, column.accessorKey),
+                          row: { original: row }
+                        })
                       : getValue(row, column.accessorKey as string)}
                   </TableCell>
                 ))}

@@ -18,10 +18,11 @@ interface Quote {
   status: string;
 }
 
-// Define the column type to match the DataTable component requirements
+// Update the Column type to match the DataTable component's expectations
+// Make sure the properties align with what DataTable expects
 interface Column<T> {
   header: string;
-  accessorKey?: keyof T | string;
+  accessorKey: keyof T | string; // Remove the optional marker to make it required
   id?: string;
   cell?: (info: any) => React.ReactNode;
 }
@@ -66,6 +67,7 @@ const QuoteList = () => {
     fetchQuotes();
   }, [isAuthenticated, toast]);
 
+  // Fix the columns definition to ensure accessorKey is always provided
   const quoteColumns: Column<Quote>[] = [
     { header: "Quote ID", accessorKey: "id" },
     { header: "Customer", accessorKey: "customer_name" },
@@ -97,6 +99,7 @@ const QuoteList = () => {
     {
       header: "Actions",
       id: "actions",
+      accessorKey: "id", // Add accessorKey here since it's required
       cell: (info: any) => (
         <div className="flex space-x-2">
           <Button variant="outline" size="sm" asChild>
