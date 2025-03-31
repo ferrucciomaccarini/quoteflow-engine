@@ -1,143 +1,121 @@
 
+import React from "react";
 import { useAuth } from "@/context/AuthContext";
-import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
-  BarChart3, 
-  Box, 
-  Calculator, 
-  ChevronLeft, 
-  ChevronRight, 
+  LayoutDashboard, 
+  Wrench, 
   ClipboardList, 
-  HomeIcon, 
+  Menu, 
   Settings, 
-  User, 
-  Wrench 
+  LogOut,
+  BarChart3,
+  AlertTriangle 
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { useMobile } from "@/hooks/use-mobile";
+
+interface NavItemProps {
+  to: string;
+  icon: React.ElementType;
+  label: string;
+  active: boolean;
+}
+
+const NavItem = ({ to, icon: Icon, label, active }: NavItemProps) => {
+  return (
+    <Link to={to}>
+      <Button
+        variant="ghost"
+        className={cn(
+          "w-full justify-start gap-2 px-2",
+          active && "bg-muted"
+        )}
+      >
+        <Icon size={20} />
+        <span className="truncate">{label}</span>
+      </Button>
+    </Link>
+  );
+};
 
 const Sidebar = () => {
-  const { user, logout } = useAuth();
+  const { logout, user } = useAuth();
   const location = useLocation();
-  const [collapsed, setCollapsed] = useState(false);
+  const { isMobile, sidebarOpen, setSidebarOpen } = useMobile();
 
-  const menuItems = [
-    {
-      name: "Dashboard",
-      icon: HomeIcon,
-      path: "/dashboard",
-      roles: ["admin", "owner", "sales"]
-    },
-    {
-      name: "Quotes",
-      icon: ClipboardList,
-      path: "/quotes",
-      roles: ["admin", "owner", "sales"]
-    },
-    {
-      name: "Machines",
-      icon: Box,
-      path: "/machines",
-      roles: ["admin", "owner"]
-    },
-    {
-      name: "Services",
-      icon: Wrench,
-      path: "/services",
-      roles: ["admin", "owner"]
-    },
-    {
-      name: "Risk Management",
-      icon: BarChart3,
-      path: "/risk-management",
-      roles: ["admin", "owner"]
-    },
-    {
-      name: "Calculator",
-      icon: Calculator,
-      path: "/calculator",
-      roles: ["admin", "owner", "sales"]
-    },
-    {
-      name: "Settings",
-      icon: Settings,
-      path: "/settings",
-      roles: ["admin", "owner"]
-    }
+  const navItems = [
+    { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { path: "/machines", label: "Machines", icon: Wrench },
+    { path: "/services", label: "Services", icon: ClipboardList },
+    { path: "/quotes", label: "Quotes", icon: ClipboardList },
+    { path: "/risk-assessment", label: "Risk Assessment", icon: AlertTriangle },
   ];
 
-  const filteredMenuItems = menuItems.filter(item => 
-    user && item.roles.includes(user.role)
-  );
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  if (isMobile && !sidebarOpen) {
+    return (
+      <div className="fixed top-0 left-0 p-3 z-40">
+        <Button variant="ghost" size="icon" onClick={toggleSidebar}>
+          <Menu />
+        </Button>
+      </div>
+    );
+  }
 
   return (
-    <div 
-      className={`bg-sidebar h-screen flex flex-col ${
-        collapsed ? "w-16" : "w-64"
-      } transition-all duration-300 ease-in-out shadow-lg`}
+    <div
+      className={cn(
+        "h-screen flex flex-col bg-muted/10 border-r border-border overflow-auto",
+        isMobile
+          ? "fixed z-40 w-[240px] transition-all duration-300 ease-in-out"
+          : "w-[240px] sticky top-0"
+      )}
     >
-      <div className="flex items-center justify-between p-4 border-b border-sidebar-border">
-        {!collapsed && (
-          <div className="text-sidebar-foreground font-bold text-xl">
-            <span className="text-primary-foreground">Pmix</span> EaaS
-          </div>
+      <div className="p-4 border-b border-border flex items-center justify-between">
+        <h1 className="text-lg font-semibold">Pmix EaaS</h1>
+        {isMobile && (
+          <Button variant="ghost" size="sm" onClick={toggleSidebar}>
+            <Menu size={18} />
+          </Button>
         )}
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="text-sidebar-foreground hover:bg-sidebar-accent rounded p-1"
-        >
-          {collapsed ? (
-            <ChevronRight size={20} />
-          ) : (
-            <ChevronLeft size={20} />
-          )}
-        </button>
       </div>
-
-      <div className="flex-grow overflow-y-auto">
-        <nav className="mt-4">
-          <ul className="space-y-1">
-            {filteredMenuItems.map((item) => {
-              const isActive = location.pathname === item.path;
-              return (
-                <li key={item.name}>
-                  <Link
-                    to={item.path}
-                    className={`flex items-center ${
-                      collapsed ? "justify-center" : "justify-start"
-                    } px-4 py-2 ${
-                      isActive
-                        ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent"
-                    } transition-colors rounded-sm mx-2`}
-                  >
-                    <item.icon size={20} />
-                    {!collapsed && <span className="ml-3">{item.name}</span>}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
+      <div className="flex-1 py-4 px-2 space-y-1">
+        {navItems.map((item) => (
+          <NavItem
+            key={item.path}
+            to={item.path}
+            icon={item.icon}
+            label={item.label}
+            active={location.pathname === item.path}
+          />
+        ))}
       </div>
-
-      <div className="p-4 border-t border-sidebar-border">
-        <div className="flex items-center">
-          <div className="bg-sidebar-accent rounded-full p-2">
-            <User size={collapsed ? 20 : 24} className="text-sidebar-foreground" />
-          </div>
-          {!collapsed && (
-            <div className="ml-3">
-              <div className="text-sm font-medium text-sidebar-foreground">
-                {user?.name}
-              </div>
-              <button
-                onClick={logout}
-                className="text-xs text-sidebar-foreground/70 hover:text-sidebar-foreground"
-              >
-                Sign out
-              </button>
-            </div>
-          )}
+      <div className="p-4 border-t border-border mt-auto">
+        <div className="mb-4">
+          <p className="text-sm font-medium truncate">{user?.name}</p>
+          <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+        </div>
+        <div className="flex space-x-2">
+          <Button variant="outline" size="sm" className="w-full gap-1" asChild>
+            <Link to="/settings">
+              <Settings size={16} />
+              <span>Settings</span>
+            </Link>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full gap-1"
+            onClick={logout}
+          >
+            <LogOut size={16} />
+            <span>Logout</span>
+          </Button>
         </div>
       </div>
     </div>

@@ -9,7 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-// Update the Column interface to make it compatible with QuoteList
+// Define the Column interface with required accessorKey
 interface Column<T> {
   header: string;
   accessorKey: keyof T | string; // Required property

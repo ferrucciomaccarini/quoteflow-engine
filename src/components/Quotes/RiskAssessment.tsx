@@ -21,41 +21,9 @@ interface RiskAssessmentProps {
   updateData: (data: any) => void;
 }
 
-const defaultRiskVariables: RiskVariable[] = [
-  // Finance domain
-  { id: "F1", domain: "Finance", variable: "Credit Risk", frequency: 20, maxLoss: 10000, mitigation: 60, residualRisk: 0 },
-  { id: "F2", domain: "Finance", variable: "Currency Risk", frequency: 30, maxLoss: 5000, mitigation: 70, residualRisk: 0 },
-  { id: "F3", domain: "Finance", variable: "Liquidity Risk", frequency: 15, maxLoss: 12000, mitigation: 65, residualRisk: 0 },
-  { id: "F4", domain: "Finance", variable: "Market Risk", frequency: 25, maxLoss: 8000, mitigation: 55, residualRisk: 0 },
-  
-  // Usage domain
-  { id: "U1", domain: "Usage", variable: "Operational Risk", frequency: 35, maxLoss: 15000, mitigation: 75, residualRisk: 0 },
-  { id: "U2", domain: "Usage", variable: "Maintenance Risk", frequency: 40, maxLoss: 9000, mitigation: 80, residualRisk: 0 },
-  { id: "U3", domain: "Usage", variable: "Performance Risk", frequency: 20, maxLoss: 7500, mitigation: 70, residualRisk: 0 },
-  { id: "U4", domain: "Usage", variable: "Technology Risk", frequency: 15, maxLoss: 11000, mitigation: 60, residualRisk: 0 },
-  
-  // Strategy domain
-  { id: "S1", domain: "Strategy", variable: "Regulatory Risk", frequency: 10, maxLoss: 20000, mitigation: 80, residualRisk: 0 },
-  { id: "S2", domain: "Strategy", variable: "Competitive Risk", frequency: 25, maxLoss: 7500, mitigation: 50, residualRisk: 0 },
-  { id: "S3", domain: "Strategy", variable: "Resource Risk", frequency: 20, maxLoss: 9000, mitigation: 65, residualRisk: 0 },
-  { id: "S4", domain: "Strategy", variable: "Market Change Risk", frequency: 15, maxLoss: 8500, mitigation: 60, residualRisk: 0 },
-  
-  // Reputation domain
-  { id: "R1", domain: "Reputation", variable: "Brand Risk", frequency: 10, maxLoss: 25000, mitigation: 70, residualRisk: 0 },
-  { id: "R2", domain: "Reputation", variable: "Relationship Risk", frequency: 15, maxLoss: 12000, mitigation: 75, residualRisk: 0 },
-  { id: "R3", domain: "Reputation", variable: "Compliance Risk", frequency: 20, maxLoss: 18000, mitigation: 85, residualRisk: 0 },
-  { id: "R4", domain: "Reputation", variable: "Social Media Risk", frequency: 30, maxLoss: 15000, mitigation: 60, residualRisk: 0 },
-];
-
-// Pre-calculate residual risks
-const initialRiskVariables = defaultRiskVariables.map(risk => ({
-  ...risk,
-  residualRisk: calculateResidualRisk(risk.maxLoss, risk.mitigation, risk.frequency)
-}));
-
 const RiskAssessment = ({ data, updateData }: RiskAssessmentProps) => {
   const [riskVariables, setRiskVariables] = useState<RiskVariable[]>(
-    data.riskVariables || initialRiskVariables
+    data.riskVariables || []
   );
 
   const handleRiskVariableChange = (id: string, field: keyof RiskVariable, value: number) => {

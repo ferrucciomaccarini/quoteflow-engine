@@ -13,6 +13,7 @@ import Machines from "./pages/Machines";
 import Services from "./pages/Services";
 import Quotes from "./pages/Quotes";
 import NewQuote from "./pages/NewQuote";
+import RiskAssessment from "./pages/RiskAssessment";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/services" element={<Services />} />
             <Route path="/quotes" element={<Quotes />} />
             <Route path="/quotes/new" element={<NewQuote />} />
+            <Route path="/risk-assessment" element={<RiskAssessment />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
