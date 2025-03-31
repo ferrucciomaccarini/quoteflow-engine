@@ -18,11 +18,9 @@ interface Quote {
   status: string;
 }
 
-// Update the Column type to match the DataTable component's expectations
-// Make sure the properties align with what DataTable expects
 interface Column<T> {
   header: string;
-  accessorKey: keyof T | string; // Remove the optional marker to make it required
+  accessorKey: keyof T | string;
   id?: string;
   cell?: (info: any) => React.ReactNode;
 }
@@ -67,7 +65,7 @@ const QuoteList = () => {
     fetchQuotes();
   }, [isAuthenticated, toast]);
 
-  // Fix the columns definition to ensure accessorKey is always provided
+  // Fix the cell functions to work with the row data directly instead of using getValue()
   const quoteColumns: Column<Quote>[] = [
     { header: "Quote ID", accessorKey: "id" },
     { header: "Customer", accessorKey: "customer_name" },
@@ -75,35 +73,35 @@ const QuoteList = () => {
     { 
       header: "Amount", 
       accessorKey: "total_fee",
-      cell: (info: any) => `$${parseFloat(info.getValue()).toLocaleString()}/month`
+      cell: (row) => `$${parseFloat(row.total_fee).toLocaleString()}/month`
     },
     { 
       header: "Date", 
       accessorKey: "created_at",
-      cell: (info: any) => new Date(info.getValue()).toLocaleDateString()
+      cell: (row) => new Date(row.created_at).toLocaleDateString()
     },
     { 
       header: "Status", 
       accessorKey: "status",
-      cell: (info: any) => (
+      cell: (row) => (
         <span className={`px-2 py-1 text-xs rounded-full ${
-          info.getValue() === "Approved" ? "bg-green-100 text-green-800" :
-          info.getValue() === "Pending" ? "bg-yellow-100 text-yellow-800" :
-          info.getValue() === "Rejected" ? "bg-red-100 text-red-800" :
+          row.status === "Approved" ? "bg-green-100 text-green-800" :
+          row.status === "Pending" ? "bg-yellow-100 text-yellow-800" :
+          row.status === "Rejected" ? "bg-red-100 text-red-800" :
           "bg-gray-100 text-gray-800"
         }`}>
-          {info.getValue()}
+          {row.status}
         </span>
       )
     },
     {
       header: "Actions",
       id: "actions",
-      accessorKey: "id", // Add accessorKey here since it's required
-      cell: (info: any) => (
+      accessorKey: "id", 
+      cell: (row) => (
         <div className="flex space-x-2">
           <Button variant="outline" size="sm" asChild>
-            <span onClick={() => navigate(`/quotes/${info.row.original.id}`)}>
+            <span onClick={() => navigate(`/quotes/${row.id}`)}>
               <FileText className="mr-1 h-4 w-4" />
               View
             </span>
