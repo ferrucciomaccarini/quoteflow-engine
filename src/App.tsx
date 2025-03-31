@@ -14,6 +14,10 @@ import Services from "./pages/Services";
 import Quotes from "./pages/Quotes";
 import NewQuote from "./pages/NewQuote";
 import RiskAssessment from "./pages/RiskAssessment";
+import Customers from "./pages/Customers";
+import MachineDetails from "./pages/MachineDetails";
+import ServiceDetails from "./pages/ServiceDetails";
+import CustomerDetails from "./pages/CustomerDetails";
 
 const queryClient = new QueryClient();
 
@@ -29,7 +33,11 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/machines" element={<Machines />} />
+            <Route path="/machines/:id" element={<MachineDetails />} />
             <Route path="/services" element={<Services />} />
+            <Route path="/services/:id" element={<ServiceDetails />} />
+            <Route path="/customers" element={<Customers />} />
+            <Route path="/customers/:id" element={<CustomerDetails />} />
             <Route path="/quotes" element={<Quotes />} />
             <Route path="/quotes/new" element={<NewQuote />} />
             <Route path="/risk-assessment" element={<RiskAssessment />} />

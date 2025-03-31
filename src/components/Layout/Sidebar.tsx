@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Link, useLocation } from "react-router-dom";
@@ -10,7 +9,8 @@ import {
   Settings, 
   LogOut,
   BarChart3,
-  AlertTriangle 
+  AlertTriangle,
+  Users
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -40,7 +40,6 @@ const NavItem = ({ to, icon: Icon, label, active }: NavItemProps) => {
   );
 };
 
-// Create a custom hook for mobile sidebar state
 const useMobileSidebar = () => {
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
@@ -57,6 +56,7 @@ const Sidebar = () => {
     { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { path: "/machines", label: "Machines", icon: Wrench },
     { path: "/services", label: "Services", icon: ClipboardList },
+    { path: "/customers", label: "Customers", icon: Users },
     { path: "/quotes", label: "Quotes", icon: ClipboardList },
     { path: "/risk-assessment", label: "Risk Assessment", icon: AlertTriangle },
   ];

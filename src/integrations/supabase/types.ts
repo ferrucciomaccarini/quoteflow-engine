@@ -9,6 +9,128 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      customers: {
+        Row: {
+          address: string | null
+          contact_person: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          contact_person?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          contact_person?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      machine_services: {
+        Row: {
+          created_at: string | null
+          id: string
+          machine_id: string
+          service_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          machine_id: string
+          service_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          machine_id?: string
+          service_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "machine_services_machine_id_fkey"
+            columns: ["machine_id"]
+            isOneToOne: false
+            referencedRelation: "machines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "machine_services_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      machines: {
+        Row: {
+          acquisition_value: number
+          category: string
+          created_at: string | null
+          customer_id: string | null
+          daily_rate: number
+          description: string | null
+          hourly_rate: number
+          id: string
+          name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          acquisition_value?: number
+          category: string
+          created_at?: string | null
+          customer_id?: string | null
+          daily_rate?: number
+          description?: string | null
+          hourly_rate?: number
+          id?: string
+          name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          acquisition_value?: number
+          category?: string
+          created_at?: string | null
+          customer_id?: string | null
+          daily_rate?: number
+          description?: string | null
+          hourly_rate?: number
+          id?: string
+          name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "machines_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           company_id: string | null
@@ -89,6 +211,54 @@ export type Database = {
           time_horizon?: number
           total_fee?: number
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      services: {
+        Row: {
+          category: string
+          consumables_cost: number
+          created_at: string | null
+          description: string | null
+          id: string
+          interval_type: string
+          interval_value: number
+          labor_cost: number
+          machine_category: string
+          name: string
+          parts_cost: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          category: string
+          consumables_cost?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          interval_type: string
+          interval_value?: number
+          labor_cost?: number
+          machine_category: string
+          name: string
+          parts_cost?: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          category?: string
+          consumables_cost?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          interval_type?: string
+          interval_value?: number
+          labor_cost?: number
+          machine_category?: string
+          name?: string
+          parts_cost?: number
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []

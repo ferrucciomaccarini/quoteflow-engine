@@ -1,85 +1,92 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, Edit, Trash2, Eye } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Service {
   id: string;
   name: string;
   category: string;
-  machineCategory: string;
-  intervalType: "hours" | "months";
-  intervalValue: number;
-  partsCost: number;
-  laborCost: number;
-  consumablesCost: number;
-  description: string;
+  machine_category: string;
+  interval_type: "hours" | "months";
+  interval_value: number;
+  parts_cost: number;
+  labor_cost: number;
+  consumables_cost: number;
+  description: string | null;
+  total_cost?: number;
 }
 
-const initialServices: Service[] = [
-  {
-    id: "S1001",
-    name: "Preventive Maintenance - Basic",
-    category: "Maintenance",
-    machineCategory: "Pressing Equipment",
-    intervalType: "hours",
-    intervalValue: 500,
-    partsCost: 350,
-    laborCost: 250,
-    consumablesCost: 100,
-    description: "Basic preventive maintenance package including inspection and lubrication"
-  },
-  {
-    id: "S1002",
-    name: "Preventive Maintenance - Advanced",
-    category: "Maintenance",
-    machineCategory: "Robotics",
-    intervalType: "months",
-    intervalValue: 3,
-    partsCost: 750,
-    laborCost: 500,
-    consumablesCost: 250,
-    description: "Advanced maintenance package including calibration and software updates"
-  },
-  {
-    id: "S1003",
-    name: "Equipment Insurance - Standard",
-    category: "Insurance",
-    machineCategory: "All",
-    intervalType: "months",
-    intervalValue: 1,
-    partsCost: 0,
-    laborCost: 0,
-    consumablesCost: 0,
-    description: "Standard insurance coverage for equipment"
-  },
-];
-
 const ServiceCatalog = () => {
+  const { user } = useAuth();
   const { toast } = useToast();
-  const [services, setServices] = useState<Service[]>(initialServices);
+  const navigate = useNavigate();
+  const [services, setServices] = useState<Service[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newService, setNewService] = useState<Partial<Service>>({
     name: "",
     category: "Maintenance",
-    machineCategory: "",
-    intervalType: "hours",
-    intervalValue: 0,
-    partsCost: 0,
-    laborCost: 0,
-    consumablesCost: 0,
+    machine_category: "",
+    interval_type: "hours",
+    interval_value: 0,
+    parts_cost: 0,
+    labor_cost: 0,
+    consumables_cost: 0,
     description: ""
   });
 
-  const handleAddService = () => {
-    if (!newService.name || !newService.category || !newService.machineCategory) {
+  // Fetch services from Supabase
+  useEffect(() => {
+    const fetchServices = async () => {
+      if (!user) return;
+
+      try {
+        setIsLoading(true);
+        const { data, error } = await supabase
+          .from('services')
+          .select('*')
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+        
+        // Calculate total cost for each service
+        const servicesWithTotal = data.map(service => ({
+          ...service,
+          total_cost: (service.parts_cost || 0) + (service.labor_cost || 0) + (service.consumables_cost || 0)
+        }));
+
+        setServices(servicesWithTotal);
+      } catch (error: any) {
+        console.error('Error fetching services:', error);
+        toast({
+          title: "Error",
+          description: error.message || "Failed to load services",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchServices();
+  }, [user, toast]);
+
+  const handleAddService = async () => {
+    if (!user) return;
+    
+    if (!newService.name || !newService.category || !newService.machine_category) {
       toast({
         title: "Error",
         description: "Please fill all required fields",
@@ -88,62 +95,103 @@ const ServiceCatalog = () => {
       return;
     }
 
-    const id = `S${Math.floor(1000 + Math.random() * 9000)}`;
-    setServices([...services, { ...newService, id } as Service]);
-    setNewService({
-      name: "",
-      category: "Maintenance",
-      machineCategory: "",
-      intervalType: "hours",
-      intervalValue: 0,
-      partsCost: 0,
-      laborCost: 0,
-      consumablesCost: 0,
-      description: ""
-    });
-    setIsAddDialogOpen(false);
-    
-    toast({
-      title: "Success",
-      description: "Service added to catalog",
-    });
+    try {
+      const { data, error } = await supabase
+        .from('services')
+        .insert({
+          ...newService,
+          user_id: user.id
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Add the newly created service to the state
+      const newServiceWithTotal = {
+        ...data,
+        total_cost: (data.parts_cost || 0) + (data.labor_cost || 0) + (data.consumables_cost || 0)
+      };
+      
+      setServices([...services, newServiceWithTotal]);
+
+      setNewService({
+        name: "",
+        category: "Maintenance",
+        machine_category: "",
+        interval_type: "hours",
+        interval_value: 0,
+        parts_cost: 0,
+        labor_cost: 0,
+        consumables_cost: 0,
+        description: ""
+      });
+      setIsAddDialogOpen(false);
+      
+      toast({
+        title: "Success",
+        description: "Service added to catalog",
+      });
+    } catch (error: any) {
+      console.error('Error adding service:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add service",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDeleteService = (id: string) => {
-    setServices(services.filter(service => service.id !== id));
-    toast({
-      title: "Service removed",
-      description: "The service has been removed from the catalog",
-    });
+  const handleDeleteService = async (id: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('services')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      // Remove the deleted service from state
+      setServices(services.filter(service => service.id !== id));
+      
+      toast({
+        title: "Service removed",
+        description: "The service has been removed from the catalog",
+      });
+    } catch (error: any) {
+      console.error('Error deleting service:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete service",
+        variant: "destructive",
+      });
+    }
   };
 
   const serviceColumns = [
-    { header: "ID", accessorKey: "id" },
     { header: "Name", accessorKey: "name" },
     { header: "Category", accessorKey: "category" },
-    { header: "Machine Category", accessorKey: "machineCategory" },
+    { header: "Machine Category", accessorKey: "machine_category" },
     { 
       header: "Interval", 
       accessorKey: "intervalValue",
-      cell: (row: Service) => `${row.intervalValue} ${row.intervalType}`
+      cell: (row: Service) => `${row.interval_value} ${row.interval_type}`
     },
     { 
-      header: "Parts Cost", 
-      accessorKey: "partsCost",
-      cell: (row: Service) => `$${row.partsCost}`
-    },
-    { 
-      header: "Labor Cost", 
-      accessorKey: "laborCost",
-      cell: (row: Service) => `$${row.laborCost}`
+      header: "Total Cost", 
+      accessorKey: "total_cost",
+      cell: (row: Service) => `$${row.total_cost?.toFixed(2) || '0.00'}`
     },
     {
       header: "Actions",
       accessorKey: "id",
       cell: (row: Service) => (
         <div className="flex space-x-2">
-          <Button variant="outline" size="sm">
-            <Edit className="w-4 h-4" />
+          <Button variant="outline" size="sm" onClick={() => navigate(`/services/${row.id}`)}>
+            <Eye className="w-4 h-4" />
           </Button>
           <Button 
             variant="outline" 
@@ -156,6 +204,14 @@ const ServiceCatalog = () => {
       )
     }
   ];
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -214,8 +270,8 @@ const ServiceCatalog = () => {
                 <Label htmlFor="machineCategory">Machine Category*</Label>
                 <Input 
                   id="machineCategory"
-                  value={newService.machineCategory}
-                  onChange={(e) => setNewService({...newService, machineCategory: e.target.value})}
+                  value={newService.machine_category}
+                  onChange={(e) => setNewService({...newService, machine_category: e.target.value})}
                   placeholder="Enter machine category or 'All'"
                 />
               </div>
@@ -224,8 +280,8 @@ const ServiceCatalog = () => {
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="intervalType">Interval Type</Label>
                   <Select 
-                    value={newService.intervalType} 
-                    onValueChange={(value: "hours" | "months") => setNewService({...newService, intervalType: value})}
+                    value={newService.interval_type} 
+                    onValueChange={(value: "hours" | "months") => setNewService({...newService, interval_type: value})}
                   >
                     <SelectTrigger id="intervalType">
                       <SelectValue placeholder="Select interval type" />
@@ -241,10 +297,10 @@ const ServiceCatalog = () => {
                   <Input 
                     id="intervalValue"
                     type="number"
-                    value={newService.intervalValue || ""}
+                    value={newService.interval_value || ""}
                     onChange={(e) => setNewService({
                       ...newService, 
-                      intervalValue: parseInt(e.target.value) || 0
+                      interval_value: parseInt(e.target.value) || 0
                     })}
                   />
                 </div>
@@ -256,10 +312,10 @@ const ServiceCatalog = () => {
                   <Input 
                     id="partsCost"
                     type="number"
-                    value={newService.partsCost || ""}
+                    value={newService.parts_cost || ""}
                     onChange={(e) => setNewService({
                       ...newService, 
-                      partsCost: parseFloat(e.target.value) || 0
+                      parts_cost: parseFloat(e.target.value) || 0
                     })}
                   />
                 </div>
@@ -268,10 +324,10 @@ const ServiceCatalog = () => {
                   <Input 
                     id="laborCost"
                     type="number"
-                    value={newService.laborCost || ""}
+                    value={newService.labor_cost || ""}
                     onChange={(e) => setNewService({
                       ...newService, 
-                      laborCost: parseFloat(e.target.value) || 0
+                      labor_cost: parseFloat(e.target.value) || 0
                     })}
                   />
                 </div>
@@ -280,10 +336,10 @@ const ServiceCatalog = () => {
                   <Input 
                     id="consumablesCost"
                     type="number"
-                    value={newService.consumablesCost || ""}
+                    value={newService.consumables_cost || ""}
                     onChange={(e) => setNewService({
                       ...newService, 
-                      consumablesCost: parseFloat(e.target.value) || 0
+                      consumables_cost: parseFloat(e.target.value) || 0
                     })}
                   />
                 </div>
@@ -293,7 +349,7 @@ const ServiceCatalog = () => {
                 <Label htmlFor="description">Description</Label>
                 <Textarea 
                   id="description"
-                  value={newService.description}
+                  value={newService.description || ""}
                   onChange={(e) => setNewService({...newService, description: e.target.value})}
                   placeholder="Enter description"
                 />
