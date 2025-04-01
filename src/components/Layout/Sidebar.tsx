@@ -15,6 +15,8 @@ import {
   AlertTriangle,
   PercentSquare,
   Percent,
+  Tags,
+  ListFilter,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -116,19 +118,43 @@ export function Sidebar() {
             active={location.pathname === "/dashboard"}
           />
           
-          <SidebarItem
+          <SidebarCollapse
             icon={Truck}
-            label="Machines"
-            to="/machines"
-            active={location.pathname === "/machines"}
-          />
+            label="Machine Management"
+            defaultOpen={location.pathname.includes("machine")}
+          >
+            <SidebarItem
+              icon={Package}
+              label="Machines"
+              to="/machines"
+              active={location.pathname === "/machines"}
+            />
+            <SidebarItem
+              icon={Tags}
+              label="Categories"
+              to="/machine-categories"
+              active={location.pathname === "/machine-categories"}
+            />
+          </SidebarCollapse>
           
-          <SidebarItem
+          <SidebarCollapse
             icon={Wrench}
-            label="Services"
-            to="/services"
-            active={location.pathname === "/services"}
-          />
+            label="Service Management"
+            defaultOpen={location.pathname.includes("service")}
+          >
+            <SidebarItem
+              icon={Wrench}
+              label="Services"
+              to="/services"
+              active={location.pathname === "/services"}
+            />
+            <SidebarItem
+              icon={ListFilter}
+              label="Categories"
+              to="/service-categories"
+              active={location.pathname === "/service-categories"}
+            />
+          </SidebarCollapse>
           
           <SidebarItem
             icon={Users}

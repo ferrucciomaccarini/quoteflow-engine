@@ -48,33 +48,42 @@ export type Database = {
           contact_person: string | null
           created_at: string | null
           email: string | null
+          establishment_date: string | null
           id: string
           name: string
           phone: string | null
+          termination_date: string | null
           updated_at: string | null
           user_id: string
+          vat_number: string | null
         }
         Insert: {
           address?: string | null
           contact_person?: string | null
           created_at?: string | null
           email?: string | null
+          establishment_date?: string | null
           id?: string
           name: string
           phone?: string | null
+          termination_date?: string | null
           updated_at?: string | null
           user_id: string
+          vat_number?: string | null
         }
         Update: {
           address?: string | null
           contact_person?: string | null
           created_at?: string | null
           email?: string | null
+          establishment_date?: string | null
           id?: string
           name?: string
           phone?: string | null
+          termination_date?: string | null
           updated_at?: string | null
           user_id?: string
+          vat_number?: string | null
         }
         Relationships: []
       }
@@ -108,6 +117,33 @@ export type Database = {
           user_id?: string
           valid_from?: string
           valid_to?: string | null
+        }
+        Relationships: []
+      }
+      machine_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -150,11 +186,14 @@ export type Database = {
       machines: {
         Row: {
           acquisition_value: number
+          average_annual_usage_hours: number | null
           category: string
+          category_id: string | null
           created_at: string | null
           customer_id: string | null
           daily_rate: number
           description: string | null
+          estimated_useful_life: number | null
           hourly_rate: number
           id: string
           name: string
@@ -163,11 +202,14 @@ export type Database = {
         }
         Insert: {
           acquisition_value?: number
+          average_annual_usage_hours?: number | null
           category: string
+          category_id?: string | null
           created_at?: string | null
           customer_id?: string | null
           daily_rate?: number
           description?: string | null
+          estimated_useful_life?: number | null
           hourly_rate?: number
           id?: string
           name: string
@@ -176,11 +218,14 @@ export type Database = {
         }
         Update: {
           acquisition_value?: number
+          average_annual_usage_hours?: number | null
           category?: string
+          category_id?: string | null
           created_at?: string | null
           customer_id?: string | null
           daily_rate?: number
           description?: string | null
+          estimated_useful_life?: number | null
           hourly_rate?: number
           id?: string
           name?: string
@@ -188,6 +233,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "machines_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "machine_categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "machines_customer_id_fkey"
             columns: ["customer_id"]
@@ -281,6 +333,80 @@ export type Database = {
         }
         Relationships: []
       }
+      risk_assessments: {
+        Row: {
+          annual_discount_rate: number
+          av_percentage: number
+          contract_years: number
+          created_at: string
+          id: string
+          machine_id: string
+          risk_data: Json
+          total_actualized_residual_risk: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          annual_discount_rate?: number
+          av_percentage?: number
+          contract_years?: number
+          created_at?: string
+          id?: string
+          machine_id: string
+          risk_data: Json
+          total_actualized_residual_risk?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          annual_discount_rate?: number
+          av_percentage?: number
+          contract_years?: number
+          created_at?: string
+          id?: string
+          machine_id?: string
+          risk_data?: Json
+          total_actualized_residual_risk?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "risk_assessments_machine_id_fkey"
+            columns: ["machine_id"]
+            isOneToOne: false
+            referencedRelation: "machines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       services: {
         Row: {
           category: string
@@ -292,8 +418,10 @@ export type Database = {
           interval_value: number
           labor_cost: number
           machine_category: string
+          machine_id: string | null
           name: string
           parts_cost: number
+          service_category_id: string | null
           updated_at: string | null
           user_id: string
         }
@@ -307,8 +435,10 @@ export type Database = {
           interval_value?: number
           labor_cost?: number
           machine_category: string
+          machine_id?: string | null
           name: string
           parts_cost?: number
+          service_category_id?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -322,12 +452,29 @@ export type Database = {
           interval_value?: number
           labor_cost?: number
           machine_category?: string
+          machine_id?: string | null
           name?: string
           parts_cost?: number
+          service_category_id?: string | null
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "services_machine_id_fkey"
+            columns: ["machine_id"]
+            isOneToOne: false
+            referencedRelation: "machines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "services_service_category_id_fkey"
+            columns: ["service_category_id"]
+            isOneToOne: false
+            referencedRelation: "service_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

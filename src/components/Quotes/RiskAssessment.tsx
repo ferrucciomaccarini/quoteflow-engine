@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,18 +16,23 @@ interface RiskVariable {
   residualRisk: number; // calculated
 }
 
+interface RiskData {
+  riskVariables: RiskVariable[];
+  avPercentage: number;
+  annualDiscountRate: number;
+  contractYears: number;
+  totalActualizedRisk: number;
+  [key: string]: any;
+}
+
 interface RiskAssessmentProps {
-  data: any;
-  updateData: (data: any) => void;
+  data: RiskData;
+  updateData: (data: Partial<RiskData>) => void;
 }
 
 const RiskAssessment = ({ data, updateData }: RiskAssessmentProps) => {
-  const [riskVariables, setRiskVariables] = useState<RiskVariable[]>(
-    data.riskVariables || []
-  );
-
   const handleRiskVariableChange = (id: string, field: keyof RiskVariable, value: number) => {
-    const updatedRiskVariables = riskVariables.map(risk => {
+    const updatedRiskVariables = data.riskVariables.map(risk => {
       if (risk.id === id) {
         const updatedRisk = { ...risk, [field]: value };
         
@@ -45,22 +50,21 @@ const RiskAssessment = ({ data, updateData }: RiskAssessmentProps) => {
       return risk;
     });
     
-    setRiskVariables(updatedRiskVariables);
-    updateData({ ...data, riskVariables: updatedRiskVariables });
+    updateData({ riskVariables: updatedRiskVariables });
   };
 
   const getTotalRiskByDomain = (domain: string): number => {
-    return riskVariables
+    return data.riskVariables
       .filter(risk => risk.domain === domain)
       .reduce((sum, risk) => sum + risk.residualRisk, 0);
   };
 
   const getTotalResidualRisk = (): number => {
-    return riskVariables.reduce((sum, risk) => sum + risk.residualRisk, 0);
+    return data.riskVariables.reduce((sum, risk) => sum + risk.residualRisk, 0);
   };
 
   const renderRiskDomain = (domain: "Finance" | "Usage" | "Strategy" | "Reputation") => {
-    const domainVariables = riskVariables.filter(risk => risk.domain === domain);
+    const domainVariables = data.riskVariables.filter(risk => risk.domain === domain);
     
     return (
       <Card key={domain} className="mb-6">
@@ -105,6 +109,7 @@ const RiskAssessment = ({ data, updateData }: RiskAssessmentProps) => {
                       type="number"
                       value={risk.maxLoss}
                       onChange={(e) => handleRiskVariableChange(risk.id, "maxLoss", parseFloat(e.target.value) || 0)}
+                      disabled // Max loss is now calculated based on acquisition value
                     />
                   </div>
                   
@@ -134,9 +139,9 @@ const RiskAssessment = ({ data, updateData }: RiskAssessmentProps) => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Risk Assessment</h2>
+        <h2 className="text-2xl font-bold">Annual Risk Assessment</h2>
         <div className="text-xl font-semibold">
-          Total Residual Risk: <span className="text-primary">${getTotalResidualRisk().toLocaleString(undefined, {maximumFractionDigits: 2})}</span>
+          Annual Risk: <span className="text-primary">${getTotalResidualRisk().toLocaleString(undefined, {maximumFractionDigits: 2})}</span>
         </div>
       </div>
       

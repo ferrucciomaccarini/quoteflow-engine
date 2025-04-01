@@ -40,6 +40,40 @@ export const calculateResidualRisk = (
   return maxLoss * (mitigationFactor / 100) * (frequency / 100);
 };
 
+// Calculate max loss based on acquisition value and percentage
+export const calculateMaxLoss = (
+  acquisitionValue: number,
+  avPercentage: number
+): number => {
+  return acquisitionValue * (avPercentage / 100);
+};
+
+// Calculate actualized total residual risk
+export const calculateActualizedTotalRisk = (
+  risksByDomain: { [key: string]: number[] },
+  annualDiscountRate: number,
+  contractYears: number
+): number => {
+  // Annual discount rate to periodic rate (divide by 12 for monthly)
+  const yearlyRate = annualDiscountRate / 100;
+  
+  // Get all individual risk values into one array
+  const allRisks = Object.values(risksByDomain).flat();
+  
+  // Calculate the present value of each risk for each year
+  let totalRisk = 0;
+  
+  // For each risk, calculate its present value for each year of the contract
+  allRisks.forEach(risk => {
+    for (let year = 1; year <= contractYears; year++) {
+      const presentValue = risk / Math.pow(1 + yearlyRate, year);
+      totalRisk += presentValue;
+    }
+  });
+  
+  return totalRisk;
+};
+
 // Calculate events for maintenance services
 export interface ServiceEvent {
   month: number;

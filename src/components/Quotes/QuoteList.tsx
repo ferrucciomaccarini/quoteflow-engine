@@ -30,11 +30,11 @@ const QuoteList = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isAuthenticated } = useAuth();
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchQuotes = async () => {
-      if (!isAuthenticated) {
+      if (!user) {
         setLoading(false);
         return;
       }
@@ -43,6 +43,8 @@ const QuoteList = () => {
         const { data, error } = await supabase
           .from('quotes')
           .select('*')
+          .eq('user_id', user.id)
+          .neq('status', 'risk_assessment') // Skip risk assessments
           .order('created_at', { ascending: false });
 
         if (error) {
@@ -50,7 +52,7 @@ const QuoteList = () => {
         }
 
         setQuotes(data || []);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching quotes:', error);
         toast({
           title: "Error",
@@ -63,7 +65,7 @@ const QuoteList = () => {
     };
 
     fetchQuotes();
-  }, [isAuthenticated, toast]);
+  }, [user, toast]);
 
   // Fix the cell functions to work with the row data directly instead of using getValue()
   const quoteColumns: Column<Quote>[] = [

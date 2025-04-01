@@ -21,6 +21,8 @@ import CustomerDetails from "./pages/CustomerDetails";
 import CreditBureauSpreads from "./pages/CreditBureauSpreads";
 import InternalRatingSpreads from "./pages/InternalRatingSpreads";
 import Owners from "./pages/Owners";
+import MachineCategories from "./pages/MachineCategories";
+import ServiceCategories from "./pages/ServiceCategories";
 
 const queryClient = new QueryClient();
 
@@ -37,13 +39,16 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/machines" element={<Machines />} />
             <Route path="/machines/:id" element={<MachineDetails />} />
+            <Route path="/machine-categories" element={<MachineCategories />} />
             <Route path="/services" element={<Services />} />
             <Route path="/services/:id" element={<ServiceDetails />} />
+            <Route path="/service-categories" element={<ServiceCategories />} />
             <Route path="/customers" element={<Customers />} />
             <Route path="/customers/:id" element={<CustomerDetails />} />
             <Route path="/quotes" element={<Quotes />} />
             <Route path="/quotes/new" element={<NewQuote />} />
             <Route path="/risk-assessment" element={<RiskAssessment />} />
+            <Route path="/risk-assessment/:machineId" element={<RiskAssessment />} />
             <Route path="/credit-bureau-spreads" element={<CreditBureauSpreads />} />
             <Route path="/internal-rating-spreads" element={<InternalRatingSpreads />} />
             <Route path="/owners" element={<Owners />} />
