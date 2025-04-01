@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import StepWizard from "../common/StepWizard";
 import RiskAssessment from "./RiskAssessment";
-import { calculatePeriodicFee, calculatePresentValue, calculateServiceEvents, calculateServicePresentValue } from "@/utils/calculations";
+import { calculatePeriodicFee, calculatePresentValue, calculateServiceEvents, calculateServicePresentValue, calculateResidualRisk } from "@/utils/calculations";
 import { saveQuote } from "@/utils/quoteService";
 import { useAuth } from "@/context/AuthContext";
 import { RiskData } from "@/types/database";
@@ -706,7 +706,7 @@ const FinancialParametersStep = ({ data, updateData }: any) => {
 
       <Card className="bg-primary/5 border-primary/20">
         <CardHeader>
-          <CardTitle>Fee Calculation (Before Risks)</CardTitle>
+          <CardTitle>Fee Calculation (Before Risks)</Title>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="grid grid-cols-2 gap-2">
@@ -1000,7 +1000,7 @@ const QuoteCreation = () => {
     }
   };
   
-  const initializeRiskData = (): RiskData => {
+  const initializeRiskData = () => {
     const domains = ["Finance", "Usage", "Strategy", "Reputation"];
     let riskId = 1;
     
