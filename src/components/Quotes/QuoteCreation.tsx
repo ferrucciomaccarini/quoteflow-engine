@@ -12,6 +12,7 @@ import RiskAssessment from "./RiskAssessment";
 import { calculatePeriodicFee, calculatePresentValue, calculateServiceEvents, calculateServicePresentValue } from "@/utils/calculations";
 import { saveQuote } from "@/utils/quoteService";
 import { useAuth } from "@/context/AuthContext";
+import { RiskData } from "@/types/database";
 
 const CustomerNeedsStep = ({ data, updateData }: any) => {
   return (
@@ -496,7 +497,7 @@ const FinancialParametersStep = ({ data, updateData }: any) => {
 
       <Card className="bg-primary/5 border-primary/20">
         <CardHeader>
-          <CardTitle>Fee Calculation (Before Risks)</CardTitle>
+          <CardTitle>Fee Calculation (Before Risks)</Title>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="grid grid-cols-2 gap-2">
@@ -796,7 +797,8 @@ const QuoteCreation = () => {
       avPercentage: 50,
       annualDiscountRate: 0.05,
       contractYears: 3,
-      totalActualizedRisk: 0
+      totalActualizedRisk: 0,
+      machineId: ''
     };
   };
 
