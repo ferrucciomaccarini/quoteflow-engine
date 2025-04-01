@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -13,7 +12,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { Machine, MachineInsert, MachineCategory } from "@/types/database";
+import { Machine as DatabaseMachine, MachineInsert, MachineCategory as DatabaseMachineCategory } from "@/types/database";
 
 interface Machine {
   id: string;
@@ -21,8 +20,8 @@ interface Machine {
   category: string;
   category_id: string | null;
   acquisition_value: number;
-  average_annual_usage_hours: number;
-  estimated_useful_life: number;
+  average_annual_usage_hours: number | null;
+  estimated_useful_life: number | null;
   description: string | null;
   customer_id: string | null;
   customer_name?: string;
@@ -141,10 +140,9 @@ const MachineCatalog = () => {
     }
 
     try {
-      // Ensure required fields are present
       const machineData: MachineInsert = {
-        name: newMachine.name || '',
-        category: '',  // This will be set below
+        name: newMachine.name,
+        category: '', // This will be set below
         user_id: user.id,
         acquisition_value: newMachine.acquisition_value || 0,
         daily_rate: newMachine.daily_rate || 0,
@@ -156,7 +154,6 @@ const MachineCatalog = () => {
         estimated_useful_life: newMachine.estimated_useful_life || 0
       };
 
-      // Handle the special case where we might need to fetch category name
       if (machineData.category_id) {
         const category = categories.find(c => c.id === machineData.category_id);
         if (category) {

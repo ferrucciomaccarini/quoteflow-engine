@@ -109,7 +109,7 @@ const RiskAssessmentTool = () => {
     try {
       setIsLoading(true);
       
-      const { data: assessmentData, error: assessmentError } = await supabase
+      const { data: assessment, error: assessmentError } = await supabase
         .from('risk_assessments')
         .select('*')
         .eq('user_id', user.id)
@@ -120,20 +120,25 @@ const RiskAssessmentTool = () => {
         
       if (assessmentError) throw assessmentError;
       
-      if (assessmentData) {
-        const riskDataObj = typeof assessmentData.risk_data === 'string' 
-          ? JSON.parse(assessmentData.risk_data) 
-          : assessmentData.risk_data;
+      if (assessment) {
+        const riskData = typeof assessment.risk_data === 'string' 
+          ? JSON.parse(assessment.risk_data as string) 
+          : assessment.risk_data as RiskData;
         
-        const riskData = {
-          riskVariables: riskDataObj.riskVariables || getDefaultRiskVariables(selectedMachine?.acquisition_value || 0, data.avPercentage),
-          avPercentage: assessmentData.av_percentage || 50,
-          annualDiscountRate: assessmentData.annual_discount_rate || 5.0,
-          contractYears: assessmentData.contract_years || 3,
-          totalActualizedRisk: assessmentData.total_actualized_residual_risk || 0,
-          machineId: machineId
-        };
-        setData(riskData);
+        const riskVariables = riskData.riskVariables || getDefaultRiskVariables(selectedMachine?.acquisition_value || 0, data.avPercentage);
+        const avPercentage = assessment.av_percentage || 50;
+        const annualDiscountRate = assessment.annual_discount_rate || 5.0;
+        const contractYears = assessment.contract_years || 3;
+        const totalActualizedRisk = assessment.total_actualized_residual_risk || 0;
+        
+        setData({
+          riskVariables,
+          avPercentage,
+          annualDiscountRate,
+          contractYears,
+          totalActualizedRisk,
+          machineId
+        });
       } else {
         setData({
           riskVariables: getDefaultRiskVariables(selectedMachine?.acquisition_value || 0, data.avPercentage),
@@ -141,7 +146,7 @@ const RiskAssessmentTool = () => {
           annualDiscountRate: 5.0,
           contractYears: 3,
           totalActualizedRisk: 0,
-          machineId: machineId
+          machineId
         });
       }
     } catch (error: any) {
@@ -157,7 +162,7 @@ const RiskAssessmentTool = () => {
         annualDiscountRate: 5.0,
         contractYears: 3,
         totalActualizedRisk: 0,
-        machineId: machineId
+        machineId
       });
     } finally {
       setIsLoading(false);

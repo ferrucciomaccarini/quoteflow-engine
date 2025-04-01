@@ -14,13 +14,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { Service, ServiceInsert, ServiceCategory } from "@/types/database";
 
+interface ServiceWithUI extends Service {
+  machine_name?: string;
+  total_cost?: number;
+}
+
+interface CategoryUI {
+  id: string;
+  name: string;
+}
+
 const ServiceCatalog = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [services, setServices] = useState<Service[]>([]);
+  const [services, setServices] = useState<ServiceWithUI[]>([]);
   const [machines, setMachines] = useState<{id: string, name: string, category: string}[]>([]);
-  const [categories, setCategories] = useState<ServiceCategory[]>([]);
+  const [categories, setCategories] = useState<CategoryUI[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newService, setNewService] = useState<Partial<ServiceInsert>>({
@@ -44,7 +54,6 @@ const ServiceCatalog = () => {
       try {
         setIsLoading(true);
         
-        // Fetch services
         const { data: servicesData, error: servicesError } = await supabase
           .from('services')
           .select(`
@@ -65,7 +74,6 @@ const ServiceCatalog = () => {
 
         setServices(servicesWithTotal);
         
-        // Fetch machines
         const { data: machinesData, error: machinesError } = await supabase
           .from('machines')
           .select('id, name, category')
@@ -74,7 +82,6 @@ const ServiceCatalog = () => {
         if (machinesError) throw machinesError;
         setMachines(machinesData || []);
         
-        // Fetch service categories
         const { data: categoriesData, error: categoriesError } = await supabase
           .from('service_categories')
           .select('id, name')
@@ -110,11 +117,9 @@ const ServiceCatalog = () => {
     }
 
     try {
-      // Find the selected machine to get its category
       const selectedMachine = machines.find(m => m.id === newService.machine_id);
       const machineCategoryValue = selectedMachine?.category || "Uncategorized";
       
-      // Get category name for backward compatibility
       const selectedCategory = categories.find(c => c.id === newService.service_category_id);
       const categoryName = selectedCategory?.name || "Uncategorized";
 
@@ -218,17 +223,17 @@ const ServiceCatalog = () => {
     { 
       header: "Interval", 
       accessorKey: "intervalValue",
-      cell: (row: Service) => `${row.interval_value} ${row.interval_type}`
+      cell: (row: ServiceWithUI) => `${row.interval_value} ${row.interval_type}`
     },
     { 
       header: "Total Cost", 
       accessorKey: "total_cost",
-      cell: (row: Service) => `$${row.total_cost?.toFixed(2) || '0.00'}`
+      cell: (row: ServiceWithUI) => `$${row.total_cost?.toFixed(2) || '0.00'}`
     },
     {
       header: "Actions",
       accessorKey: "id",
-      cell: (row: Service) => (
+      cell: (row: ServiceWithUI) => (
         <div className="flex space-x-2">
           <Button variant="outline" size="sm" onClick={() => navigate(`/services/${row.id}`)}>
             <Eye className="w-4 h-4" />

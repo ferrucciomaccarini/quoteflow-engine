@@ -39,8 +39,8 @@ export type MachineCategory = {
   name: string;
   description?: string | null;
   user_id: string;
-  created_at?: string;
-  updated_at?: string;
+  created_at: string;
+  updated_at: string;
 };
 
 export type MachineCategoryInsert = Omit<MachineCategory, 'id' | 'created_at' | 'updated_at'>;

@@ -790,6 +790,16 @@ const QuoteCreation = () => {
     }
   };
   
+  const initializeRiskData = (): RiskData => {
+    return {
+      riskVariables: [],
+      avPercentage: 50,
+      annualDiscountRate: 0.05,
+      contractYears: 3,
+      totalActualizedRisk: 0
+    };
+  };
+
   const steps = [
     {
       id: "customer-needs",
@@ -859,7 +869,8 @@ const QuoteCreation = () => {
           baseRate: 5,
           bureauSpread: 1,
           ratingSpread: 0.5,
-          totalRate: 6.5
+          totalRate: 6.5,
+          riskData: initializeRiskData()
         }}
       />
     </div>
