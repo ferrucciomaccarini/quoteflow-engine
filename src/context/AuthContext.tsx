@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useContext, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
@@ -15,7 +14,7 @@ interface UserProfile {
 
 interface AuthContextProps {
   user: UserProfile | null;
-  session: Session | null; // Add session to context
+  session: Session | null; 
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
@@ -33,9 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   
-  // Initialize auth and set up listeners
   useEffect(() => {
-    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
         console.log("Auth state changed:", event, currentSession?.user?.id);
@@ -50,7 +47,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    // Check for existing session
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       console.log("Existing session check:", currentSession?.user?.id);
       setSession(currentSession);
@@ -67,7 +63,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Function to fetch user profile from profiles table
   const fetchUserProfile = async (authUser: User) => {
     setIsLoading(true);
     try {
@@ -105,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<void> => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -118,7 +113,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       
       // User profile is fetched in the onAuthStateChange listener
-      return data;
     } catch (error: any) {
       console.error("Login failed:", error);
       throw error;
@@ -127,7 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const register = async (email: string, password: string, name: string) => {
+  const register = async (email: string, password: string, name: string): Promise<void> => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -146,7 +140,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       // User profile will be created by database trigger and 
       // then fetched by the onAuthStateChange listener
-      return data;
     } catch (error: any) {
       console.error("Registration failed:", error);
       throw error;
@@ -174,7 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
-        session, // Add session to context value
+        session,
         isAuthenticated: !!user && !!session,
         isLoading,
         login,
