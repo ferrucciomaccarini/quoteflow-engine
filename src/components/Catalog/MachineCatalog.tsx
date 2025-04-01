@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -287,14 +288,14 @@ const MachineCatalog = () => {
               <div className="flex flex-col gap-2">
                 <Label htmlFor="customer">Customer</Label>
                 <Select 
-                  value={newMachine.customer_id || ''} 
+                  value={newMachine.customer_id || undefined} 
                   onValueChange={(value) => setNewMachine({...newMachine, customer_id: value || null})}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select a customer (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     {customers.map((customer) => (
                       <SelectItem key={customer.id} value={customer.id}>{customer.name}</SelectItem>
                     ))}
