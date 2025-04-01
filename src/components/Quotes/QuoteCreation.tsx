@@ -1001,10 +1001,30 @@ const QuoteCreation = () => {
   };
   
   const initializeRiskData = (): RiskData => {
+    const domains = ["Finance", "Usage", "Strategy", "Reputation"];
+    let riskId = 1;
+    
+    const defaultRiskVariables = domains.flatMap(domain => {
+      return Array.from({ length: 4 }, (_, i) => ({
+        id: `risk-${riskId++}`,
+        domain: domain as "Finance" | "Usage" | "Strategy" | "Reputation",
+        variable: `${domain} Risk ${i + 1}`,
+        frequency: 10, // Default 10%
+        maxLoss: 1000, // Default $1000
+        mitigation: 50, // Default 50%
+        residualRisk: 50 // Will be recalculated
+      }));
+    });
+    
+    const calculatedRiskVariables = defaultRiskVariables.map(risk => ({
+      ...risk,
+      residualRisk: calculateResidualRisk(risk.maxLoss, risk.mitigation, risk.frequency)
+    }));
+    
     return {
-      riskVariables: [],
+      riskVariables: calculatedRiskVariables,
       avPercentage: 50,
-      annualDiscountRate: 0.05,
+      annualDiscountRate: 5,
       contractYears: 3,
       totalActualizedRisk: 0,
       machineId: ''
@@ -1041,13 +1061,7 @@ const QuoteCreation = () => {
       title: "Risk Assessment",
       description: "Evaluate risks according to Paradigmix methodology",
       content: <RiskAssessment 
-        data={{
-          riskVariables: [],
-          avPercentage: 50,
-          annualDiscountRate: 5,
-          contractYears: 3,
-          totalActualizedRisk: 0
-        }} 
+        data={initializeRiskData()} 
         updateData={() => {}} 
       />
     },

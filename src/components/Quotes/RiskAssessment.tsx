@@ -31,7 +31,20 @@ interface RiskAssessmentProps {
 }
 
 const RiskAssessment = ({ data, updateData }: RiskAssessmentProps) => {
+  // Make sure data.riskVariables exists, if not initialize it
+  React.useEffect(() => {
+    if (!data.riskVariables) {
+      // Initialize with empty array if undefined
+      updateData({ 
+        riskVariables: [] 
+      });
+    }
+  }, [data, updateData]);
+
   const handleRiskVariableChange = (id: string, field: keyof RiskVariable, value: number) => {
+    // Make sure data.riskVariables exists before attempting to map over it
+    if (!data.riskVariables) return;
+    
     const updatedRiskVariables = data.riskVariables.map(risk => {
       if (risk.id === id) {
         const updatedRisk = { ...risk, [field]: value };
@@ -54,16 +67,31 @@ const RiskAssessment = ({ data, updateData }: RiskAssessmentProps) => {
   };
 
   const getTotalRiskByDomain = (domain: string): number => {
+    // Make sure data.riskVariables exists before filtering and reducing
+    if (!data.riskVariables || !Array.isArray(data.riskVariables)) {
+      return 0;
+    }
+    
     return data.riskVariables
       .filter(risk => risk.domain === domain)
       .reduce((sum, risk) => sum + risk.residualRisk, 0);
   };
 
   const getTotalResidualRisk = (): number => {
+    // Make sure data.riskVariables exists before reducing
+    if (!data.riskVariables || !Array.isArray(data.riskVariables)) {
+      return 0;
+    }
+    
     return data.riskVariables.reduce((sum, risk) => sum + risk.residualRisk, 0);
   };
 
   const renderRiskDomain = (domain: "Finance" | "Usage" | "Strategy" | "Reputation") => {
+    // Make sure data.riskVariables exists before filtering
+    if (!data.riskVariables || !Array.isArray(data.riskVariables)) {
+      return null;
+    }
+    
     const domainVariables = data.riskVariables.filter(risk => risk.domain === domain);
     
     return (
@@ -135,6 +163,32 @@ const RiskAssessment = ({ data, updateData }: RiskAssessmentProps) => {
       </Card>
     );
   };
+
+  // If data.riskVariables is undefined or empty, show a placeholder message
+  if (!data.riskVariables || data.riskVariables.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold">Annual Risk Assessment</h2>
+          <div className="text-xl font-semibold">
+            Annual Risk: <span className="text-primary">$0.00</span>
+          </div>
+        </div>
+        
+        <p className="text-muted-foreground mb-4">
+          Evaluate the risk factors across the four risk domains according to the Paradigmix methodology.
+        </p>
+        
+        <Card className="p-8 text-center">
+          <CardContent>
+            <p className="text-muted-foreground">
+              No risk variables have been defined yet. Please initialize the risk assessment data.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
