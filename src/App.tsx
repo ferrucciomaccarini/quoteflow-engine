@@ -13,6 +13,7 @@ import Machines from "./pages/Machines";
 import Services from "./pages/Services";
 import Quotes from "./pages/Quotes";
 import NewQuote from "./pages/NewQuote";
+import QuoteDetail from "./pages/QuoteDetail";
 import RiskAssessment from "./pages/RiskAssessment";
 import Customers from "./pages/Customers";
 import MachineDetails from "./pages/MachineDetails";
@@ -55,6 +56,7 @@ const App = () => (
             <Route path="/customers/:id" element={<CustomerDetails />} />
             <Route path="/quotes" element={<Quotes />} />
             <Route path="/quotes/new" element={<NewQuote />} />
+            <Route path="/quotes/:id" element={<QuoteDetail />} />
             <Route path="/risk-assessment" element={<RiskAssessment />} />
             <Route path="/risk-assessment/:machineId" element={<RiskAssessment />} />
             <Route path="/credit-bureau-spreads" element={<CreditBureauSpreads />} />

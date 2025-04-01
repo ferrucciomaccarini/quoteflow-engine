@@ -102,11 +102,9 @@ const QuoteList = () => {
       accessorKey: "id", 
       cell: (row) => (
         <div className="flex space-x-2">
-          <Button variant="outline" size="sm" asChild>
-            <span onClick={() => navigate(`/quotes/${row.id}`)}>
-              <FileText className="mr-1 h-4 w-4" />
-              View
-            </span>
+          <Button variant="outline" size="sm" onClick={() => navigate(`/quotes/${row.id}`)}>
+            <FileText className="mr-1 h-4 w-4" />
+            View
           </Button>
         </div>
       )
