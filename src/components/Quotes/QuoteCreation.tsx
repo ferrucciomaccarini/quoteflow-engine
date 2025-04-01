@@ -819,7 +819,16 @@ const QuoteCreation = () => {
       id: "risk-assessment",
       title: "Risk Assessment",
       description: "Evaluate risks according to Paradigmix methodology",
-      content: <RiskAssessment data={{}} updateData={() => {}} />
+      content: <RiskAssessment 
+        data={{
+          riskVariables: [],
+          avPercentage: 50,
+          annualDiscountRate: 5,
+          contractYears: 3,
+          totalActualizedRisk: 0
+        }} 
+        updateData={() => {}} 
+      />
     },
     {
       id: "summary",

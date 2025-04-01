@@ -13,6 +13,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { Machine, MachineInsert, MachineCategory } from "@/types/database";
 
 interface Machine {
   id: string;
@@ -32,18 +33,6 @@ interface MachineCategory {
   name: string;
 }
 
-interface MachineInsert {
-  user_id: string;
-  name: string;
-  category_id: string | null;
-  category?: string; // For backward compatibility
-  acquisition_value?: number;
-  average_annual_usage_hours?: number;
-  estimated_useful_life?: number;
-  description?: string | null;
-  customer_id?: string | null;
-}
-
 const MachineCatalog = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -56,7 +45,10 @@ const MachineCatalog = () => {
   const [newMachine, setNewMachine] = useState<Partial<MachineInsert>>({
     name: "",
     category_id: null,
+    category: "", // Default value to ensure it's not undefined
     acquisition_value: 0,
+    daily_rate: 0,
+    hourly_rate: 0,
     average_annual_usage_hours: 0,
     estimated_useful_life: 0,
     description: "",
@@ -149,9 +141,19 @@ const MachineCatalog = () => {
     }
 
     try {
+      // Ensure required fields are present
       const machineData: MachineInsert = {
-        ...newMachine,
-        user_id: user.id
+        name: newMachine.name || '',
+        category: '',  // This will be set below
+        user_id: user.id,
+        acquisition_value: newMachine.acquisition_value || 0,
+        daily_rate: newMachine.daily_rate || 0,
+        hourly_rate: newMachine.hourly_rate || 0,
+        category_id: newMachine.category_id || null,
+        description: newMachine.description || null,
+        customer_id: newMachine.customer_id || null,
+        average_annual_usage_hours: newMachine.average_annual_usage_hours || 0,
+        estimated_useful_life: newMachine.estimated_useful_life || 0
       };
 
       // Handle the special case where we might need to fetch category name
@@ -159,7 +161,11 @@ const MachineCatalog = () => {
         const category = categories.find(c => c.id === machineData.category_id);
         if (category) {
           machineData.category = category.name;
+        } else {
+          machineData.category = "Uncategorized";
         }
+      } else {
+        machineData.category = "Uncategorized";
       }
 
       const { data, error } = await supabase
@@ -185,7 +191,10 @@ const MachineCatalog = () => {
       setNewMachine({
         name: "",
         category_id: null,
+        category: "",
         acquisition_value: 0,
+        daily_rate: 0,
+        hourly_rate: 0,
         average_annual_usage_hours: 0,
         estimated_useful_life: 0,
         description: "",

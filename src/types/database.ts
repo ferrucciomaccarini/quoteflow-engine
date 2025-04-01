@@ -20,7 +20,19 @@ export type Machine = {
   estimated_useful_life?: number | null;
 };
 
-export type MachineInsert = Omit<Machine, 'id' | 'created_at' | 'updated_at'>;
+export type MachineInsert = {
+  name: string;
+  category: string;
+  category_id?: string | null;
+  acquisition_value: number;
+  description?: string | null;
+  daily_rate: number;
+  hourly_rate: number;
+  customer_id?: string | null;
+  user_id: string;
+  average_annual_usage_hours?: number | null;
+  estimated_useful_life?: number | null;
+};
 
 export type MachineCategory = {
   id: string;
@@ -51,7 +63,20 @@ export type Service = {
   machine_id?: string | null;
 };
 
-export type ServiceInsert = Omit<Service, 'id' | 'created_at' | 'updated_at'>;
+export type ServiceInsert = {
+  name: string;
+  description?: string | null;
+  category: string;
+  machine_category: string;
+  interval_type: string;
+  interval_value: number;
+  labor_cost: number;
+  parts_cost: number;
+  consumables_cost: number;
+  user_id: string;
+  service_category_id?: string | null;
+  machine_id?: string | null;
+};
 
 export type ServiceCategory = {
   id: string;
@@ -83,16 +108,23 @@ export type RiskData = {
   annualDiscountRate: number;
   contractYears: number;
   totalActualizedRisk: number;
+  machineId?: string;
+  [key: string]: any;
 };
 
 export type RiskVariable = {
-  id: number;
+  id: number | string;
   domain: string;
-  name: string;
-  likelihood: number;
-  impact: number;
-  riskValue: number;
-  presentValues: number[];
+  name?: string;
+  variable?: string;
+  likelihood?: number;
+  impact?: number;
+  frequency?: number;
+  maxLoss?: number;
+  mitigation?: number;
+  riskValue?: number;
+  residualRisk?: number;
+  presentValues?: number[];
 };
 
 export type RiskAssessmentInsert = Omit<RiskAssessment, 'id' | 'created_at' | 'updated_at'>;

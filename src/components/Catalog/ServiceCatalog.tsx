@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -13,53 +12,14 @@ import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-
-interface Service {
-  id: string;
-  name: string;
-  category: string;
-  service_category_id: string | null;
-  machine_id: string | null;
-  machine_name?: string;
-  interval_type: string;
-  interval_value: number;
-  parts_cost: number;
-  labor_cost: number;
-  consumables_cost: number;
-  description: string | null;
-  total_cost?: number;
-}
-
-interface ServiceCategory {
-  id: string;
-  name: string;
-}
-
-interface Machine {
-  id: string;
-  name: string;
-}
-
-interface ServiceInsert {
-  user_id: string;
-  name: string;
-  category?: string;
-  service_category_id?: string | null;
-  machine_id?: string | null;
-  interval_type: string;
-  interval_value?: number;
-  parts_cost?: number;
-  labor_cost?: number;
-  consumables_cost?: number;
-  description?: string | null;
-}
+import { Service, ServiceInsert, ServiceCategory } from "@/types/database";
 
 const ServiceCatalog = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [services, setServices] = useState<Service[]>([]);
-  const [machines, setMachines] = useState<Machine[]>([]);
+  const [machines, setMachines] = useState<{id: string, name: string, category: string}[]>([]);
   const [categories, setCategories] = useState<ServiceCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -72,7 +32,9 @@ const ServiceCatalog = () => {
     parts_cost: 0,
     labor_cost: 0,
     consumables_cost: 0,
-    description: ""
+    description: "",
+    category: "",
+    machine_category: ""
   });
 
   useEffect(() => {
@@ -106,7 +68,7 @@ const ServiceCatalog = () => {
         // Fetch machines
         const { data: machinesData, error: machinesError } = await supabase
           .from('machines')
-          .select('id, name')
+          .select('id, name, category')
           .eq('user_id', user.id);
           
         if (machinesError) throw machinesError;
@@ -148,20 +110,28 @@ const ServiceCatalog = () => {
     }
 
     try {
+      // Find the selected machine to get its category
+      const selectedMachine = machines.find(m => m.id === newService.machine_id);
+      const machineCategoryValue = selectedMachine?.category || "Uncategorized";
+      
+      // Get category name for backward compatibility
+      const selectedCategory = categories.find(c => c.id === newService.service_category_id);
+      const categoryName = selectedCategory?.name || "Uncategorized";
+
       const serviceData: ServiceInsert = {
-        ...newService,
         name: newService.name,
         service_category_id: newService.service_category_id,
         machine_id: newService.machine_id,
         interval_type: newService.interval_type || "hours",
+        interval_value: newService.interval_value || 0,
+        parts_cost: newService.parts_cost || 0,
+        labor_cost: newService.labor_cost || 0,
+        consumables_cost: newService.consumables_cost || 0,
+        description: newService.description || null,
+        category: categoryName,
+        machine_category: machineCategoryValue,
         user_id: user.id
       };
-
-      // Get category name for backward compatibility
-      const selectedCategory = categories.find(c => c.id === newService.service_category_id);
-      if (selectedCategory) {
-        serviceData.category = selectedCategory.name;
-      }
 
       const { data, error } = await supabase
         .from('services')
@@ -193,7 +163,9 @@ const ServiceCatalog = () => {
         parts_cost: 0,
         labor_cost: 0,
         consumables_cost: 0,
-        description: ""
+        description: "",
+        category: "",
+        machine_category: ""
       });
       setIsAddDialogOpen(false);
       

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import RiskAssessment from "./RiskAssessment";
@@ -74,19 +73,16 @@ const RiskAssessmentTool = () => {
         setMachines(machinesData || []);
         
         if (machinesData && machinesData.length > 0) {
-          // If we have a machineId from URL params, select that machine
           if (machineId) {
             const machine = machinesData.find(m => m.id === machineId);
             if (machine) {
               setSelectedMachine(machine);
               loadRiskAssessment(machine.id);
             } else {
-              // If machine ID is invalid, select the first machine
               setSelectedMachine(machinesData[0]);
               loadRiskAssessment(machinesData[0].id);
             }
           } else {
-            // No machineId in URL, select the first machine
             setSelectedMachine(machinesData[0]);
             loadRiskAssessment(machinesData[0].id);
           }
@@ -113,7 +109,6 @@ const RiskAssessmentTool = () => {
     try {
       setIsLoading(true);
       
-      // Check for existing risk assessment for this machine
       const { data: assessmentData, error: assessmentError } = await supabase
         .from('risk_assessments')
         .select('*')
@@ -126,9 +121,12 @@ const RiskAssessmentTool = () => {
       if (assessmentError) throw assessmentError;
       
       if (assessmentData) {
-        // Extract risk data from existing assessment
+        const riskDataObj = typeof assessmentData.risk_data === 'string' 
+          ? JSON.parse(assessmentData.risk_data) 
+          : assessmentData.risk_data;
+        
         const riskData = {
-          riskVariables: assessmentData.risk_data.riskVariables || getDefaultRiskVariables(selectedMachine?.acquisition_value || 0, data.avPercentage),
+          riskVariables: riskDataObj.riskVariables || getDefaultRiskVariables(selectedMachine?.acquisition_value || 0, data.avPercentage),
           avPercentage: assessmentData.av_percentage || 50,
           annualDiscountRate: assessmentData.annual_discount_rate || 5.0,
           contractYears: assessmentData.contract_years || 3,
@@ -137,7 +135,6 @@ const RiskAssessmentTool = () => {
         };
         setData(riskData);
       } else {
-        // Initialize with default data
         setData({
           riskVariables: getDefaultRiskVariables(selectedMachine?.acquisition_value || 0, data.avPercentage),
           avPercentage: 50,
@@ -154,7 +151,6 @@ const RiskAssessmentTool = () => {
         description: error.message || "Failed to load risk assessment",
         variant: "destructive",
       });
-      // Initialize with defaults anyway
       setData({
         riskVariables: getDefaultRiskVariables(selectedMachine?.acquisition_value || 0, data.avPercentage),
         avPercentage: 50,
@@ -172,32 +168,27 @@ const RiskAssessmentTool = () => {
     const maxLoss = calculateMaxLoss(acquisitionValue, avPercentage);
     
     const defaultRiskVariables: RiskVariable[] = [
-      // Finance domain
       { id: "F1", domain: "Finance", variable: "Credit Risk", frequency: 20, maxLoss: maxLoss, mitigation: 60, residualRisk: 0 },
       { id: "F2", domain: "Finance", variable: "Currency Risk", frequency: 30, maxLoss: maxLoss, mitigation: 70, residualRisk: 0 },
       { id: "F3", domain: "Finance", variable: "Liquidity Risk", frequency: 15, maxLoss: maxLoss, mitigation: 65, residualRisk: 0 },
       { id: "F4", domain: "Finance", variable: "Market Risk", frequency: 25, maxLoss: maxLoss, mitigation: 55, residualRisk: 0 },
       
-      // Usage domain
       { id: "U1", domain: "Usage", variable: "Operational Risk", frequency: 35, maxLoss: maxLoss, mitigation: 75, residualRisk: 0 },
       { id: "U2", domain: "Usage", variable: "Maintenance Risk", frequency: 40, maxLoss: maxLoss, mitigation: 80, residualRisk: 0 },
       { id: "U3", domain: "Usage", variable: "Performance Risk", frequency: 20, maxLoss: maxLoss, mitigation: 70, residualRisk: 0 },
       { id: "U4", domain: "Usage", variable: "Technology Risk", frequency: 15, maxLoss: maxLoss, mitigation: 60, residualRisk: 0 },
       
-      // Strategy domain
       { id: "S1", domain: "Strategy", variable: "Regulatory Risk", frequency: 10, maxLoss: maxLoss, mitigation: 80, residualRisk: 0 },
       { id: "S2", domain: "Strategy", variable: "Competitive Risk", frequency: 25, maxLoss: maxLoss, mitigation: 50, residualRisk: 0 },
       { id: "S3", domain: "Strategy", variable: "Resource Risk", frequency: 20, maxLoss: maxLoss, mitigation: 65, residualRisk: 0 },
       { id: "S4", domain: "Strategy", variable: "Market Change Risk", frequency: 15, maxLoss: maxLoss, mitigation: 60, residualRisk: 0 },
       
-      // Reputation domain
       { id: "R1", domain: "Reputation", variable: "Brand Risk", frequency: 10, maxLoss: maxLoss, mitigation: 70, residualRisk: 0 },
       { id: "R2", domain: "Reputation", variable: "Relationship Risk", frequency: 15, maxLoss: maxLoss, mitigation: 75, residualRisk: 0 },
       { id: "R3", domain: "Reputation", variable: "Compliance Risk", frequency: 20, maxLoss: maxLoss, mitigation: 85, residualRisk: 0 },
       { id: "R4", domain: "Reputation", variable: "Social Media Risk", frequency: 30, maxLoss: maxLoss, mitigation: 60, residualRisk: 0 },
     ];
     
-    // Pre-calculate residual risks
     return defaultRiskVariables.map(risk => ({
       ...risk,
       residualRisk: calculateResidualRisk(risk.maxLoss, risk.mitigation, risk.frequency)
@@ -206,7 +197,6 @@ const RiskAssessmentTool = () => {
 
   const updateData = (newData: Partial<RiskData>) => {
     setData((prev: RiskData) => {
-      // If updating riskVariables or other factors that affect total risk, recalculate
       const updated = { ...prev, ...newData };
       
       if (
@@ -214,14 +204,12 @@ const RiskAssessmentTool = () => {
         newData.annualDiscountRate !== undefined || 
         newData.contractYears !== undefined
       ) {
-        // Organize risk by domain for calculation
         const risksByDomain = updated.riskVariables.reduce((domains: { [key: string]: number[] }, risk) => {
           if (!domains[risk.domain]) domains[risk.domain] = [];
           domains[risk.domain].push(risk.residualRisk);
           return domains;
         }, {});
         
-        // Calculate total actualized risk
         updated.totalActualizedRisk = calculateActualizedTotalRisk(
           risksByDomain,
           updated.annualDiscountRate,
@@ -229,7 +217,6 @@ const RiskAssessmentTool = () => {
         );
       }
       
-      // If updating AV percentage, update all maxLoss values
       if (newData.avPercentage !== undefined && selectedMachine) {
         const maxLoss = calculateMaxLoss(selectedMachine.acquisition_value, newData.avPercentage);
         
@@ -243,7 +230,6 @@ const RiskAssessmentTool = () => {
           return updatedRisk;
         });
         
-        // Recalculate total risk again after updating max loss
         const risksByDomain = updated.riskVariables.reduce((domains: { [key: string]: number[] }, risk) => {
           if (!domains[risk.domain]) domains[risk.domain] = [];
           domains[risk.domain].push(risk.residualRisk);
@@ -293,7 +279,6 @@ const RiskAssessmentTool = () => {
         risk_data: data
       };
       
-      // Check if an assessment for this machine already exists
       const { data: existingAssessment, error: checkError } = await supabase
         .from('risk_assessments')
         .select('id')
@@ -306,14 +291,12 @@ const RiskAssessmentTool = () => {
       let result;
       
       if (existingAssessment) {
-        // Update existing assessment
         result = await supabase
           .from('risk_assessments')
           .update(riskAssessment)
           .eq('id', existingAssessment.id)
           .select();
       } else {
-        // Create new assessment
         result = await supabase
           .from('risk_assessments')
           .insert(riskAssessment)
