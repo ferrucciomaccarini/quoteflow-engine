@@ -1,5 +1,6 @@
 
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ const LoginForm = ({ onToggleForm }: { onToggleForm: () => void }) => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const { login } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,6 +26,9 @@ const LoginForm = ({ onToggleForm }: { onToggleForm: () => void }) => {
         title: "Login successful",
         description: "Welcome back!",
       });
+      
+      // Explicitly navigate to dashboard after successful login
+      navigate("/dashboard");
     } catch (error: any) {
       console.error("Login error:", error);
       toast({

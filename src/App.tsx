@@ -24,7 +24,15 @@ import Owners from "./pages/Owners";
 import MachineCategories from "./pages/MachineCategories";
 import ServiceCategories from "./pages/ServiceCategories";
 
-const queryClient = new QueryClient();
+// Configure React Query
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

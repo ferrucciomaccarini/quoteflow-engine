@@ -1,7 +1,7 @@
 
-import React, { ReactNode } from "react";
+import React, { ReactNode, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import Logo from "@/components/common/Logo";
 
@@ -10,7 +10,13 @@ interface MainLayoutProps {
 }
 
 const MainLayout = ({ children }: MainLayoutProps) => {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading, user, session } = useAuth();
+  const navigate = useNavigate();
+  
+  // Add debug logging for authentication state
+  useEffect(() => {
+    console.log("MainLayout auth state:", { isAuthenticated, isLoading, userId: user?.id, sessionActive: !!session });
+  }, [isAuthenticated, isLoading, user, session]);
 
   if (isLoading) {
     return (
@@ -21,6 +27,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   }
 
   if (!isAuthenticated) {
+    console.log("User not authenticated, redirecting to login from MainLayout");
     return <Navigate to="/login" />;
   }
 
