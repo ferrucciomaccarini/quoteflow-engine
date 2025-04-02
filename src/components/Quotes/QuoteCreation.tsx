@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -737,7 +738,7 @@ const FinancialParametersStep = ({ data, updateData }: any) => {
 
       <Card className="bg-primary/5 border-primary/20">
         <CardHeader>
-          <CardTitle>Fee Calculation (Before Risks)</Title>
+          <CardTitle>Fee Calculation (Before Risks)</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="grid grid-cols-2 gap-2">
