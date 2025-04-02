@@ -3,18 +3,28 @@
 export const calculatePeriodicFee = (
   principal: number,
   interestRate: number,
-  periods: number
+  periods: number,
+  residualValue: number = 0
 ): number => {
   // Convert annual interest rate to per-period rate
   const periodicRate = interestRate / 100 / 12;
   
   // If interest rate is zero, simply divide principal by periods
-  if (periodicRate === 0) return principal / periods;
+  if (periodicRate === 0) return (principal - residualValue) / periods;
   
-  // French method formula: PMT = P * [r(1+r)^n] / [(1+r)^n - 1]
-  const numerator = periodicRate * Math.pow(1 + periodicRate, periods);
+  // French method formula with residual value:
+  // PMT = [P * r(1+r)^n - RV * r] / [(1+r)^n - 1]
+  // where:
+  // P = principal
+  // r = periodic rate
+  // n = number of periods
+  // RV = residual value
+  
+  const principalComponent = principal * periodicRate * Math.pow(1 + periodicRate, periods);
+  const residualComponent = residualValue * periodicRate;
   const denominator = Math.pow(1 + periodicRate, periods) - 1;
-  return principal * (numerator / denominator);
+  
+  return (principalComponent - residualComponent) / denominator;
 };
 
 // Calculate present value of a future cash flow
@@ -142,4 +152,12 @@ export const calculateServicePresentValue = (
   return serviceEvents.reduce((total, event) => {
     return total + calculatePresentValue(event.cost, discountRate, event.month);
   }, 0);
+};
+
+// Calculate residual value based on acquisition value and percentage
+export const calculateResidualValue = (
+  acquisitionValue: number,
+  residualValuePercentage: number
+): number => {
+  return acquisitionValue * (residualValuePercentage / 100);
 };

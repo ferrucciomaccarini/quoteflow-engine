@@ -11,6 +11,7 @@ interface RiskVariable {
   domain: "Finance" | "Usage" | "Strategy" | "Reputation";
   variable: string;
   frequency: number; // 0-100%
+  maxLossPercentage: number; // 0-100% of acquisition value
   maxLoss: number; // dollar amount
   mitigation: number; // 0-100%
   residualRisk: number; // calculated
@@ -22,15 +23,18 @@ interface RiskData {
   annualDiscountRate: number;
   contractYears: number;
   totalActualizedRisk: number;
+  machineId: string;
+  acquisitionValue?: number;
   [key: string]: any;
 }
 
 interface RiskAssessmentProps {
   data: RiskData;
   updateData: (data: Partial<RiskData>) => void;
+  standalone?: boolean;
 }
 
-const RiskAssessment = ({ data, updateData }: RiskAssessmentProps) => {
+const RiskAssessment = ({ data, updateData, standalone = true }: RiskAssessmentProps) => {
   // Make sure data.riskVariables exists, if not initialize it
   React.useEffect(() => {
     if (!data.riskVariables) {
@@ -49,8 +53,13 @@ const RiskAssessment = ({ data, updateData }: RiskAssessmentProps) => {
       if (risk.id === id) {
         const updatedRisk = { ...risk, [field]: value };
         
+        // If maxLossPercentage is changed, update maxLoss based on acquisition value
+        if (field === "maxLossPercentage") {
+          updatedRisk.maxLoss = (data.acquisitionValue || 0) * (value / 100);
+        }
+        
         // Recalculate residual risk if any of the input factors changes
-        if (field === "frequency" || field === "maxLoss" || field === "mitigation") {
+        if (field === "frequency" || field === "maxLoss" || field === "mitigation" || field === "maxLossPercentage") {
           updatedRisk.residualRisk = calculateResidualRisk(
             updatedRisk.maxLoss, 
             updatedRisk.mitigation, 
@@ -132,13 +141,21 @@ const RiskAssessment = ({ data, updateData }: RiskAssessmentProps) => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label>Max Loss ($)</Label>
-                    <Input
-                      type="number"
-                      value={risk.maxLoss}
-                      onChange={(e) => handleRiskVariableChange(risk.id, "maxLoss", parseFloat(e.target.value) || 0)}
-                      disabled // Max loss is now calculated based on acquisition value
-                    />
+                    <Label>Max Loss (%)</Label>
+                    <div className="flex items-center gap-2">
+                      <Slider
+                        value={[risk.maxLossPercentage || 1]}
+                        min={0.1}
+                        max={10}
+                        step={0.1}
+                        onValueChange={(values) => handleRiskVariableChange(risk.id, "maxLossPercentage", values[0])}
+                        className="flex-grow"
+                      />
+                      <span className="w-12 text-right">{risk.maxLossPercentage?.toFixed(1) || 0}%</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      ${risk.maxLoss.toLocaleString(undefined, {maximumFractionDigits: 0})}
+                    </div>
                   </div>
                   
                   <div className="space-y-2">
@@ -207,6 +224,26 @@ const RiskAssessment = ({ data, updateData }: RiskAssessmentProps) => {
       {renderRiskDomain("Usage")}
       {renderRiskDomain("Strategy")}
       {renderRiskDomain("Reputation")}
+
+      {!standalone && (
+        <div className="flex justify-end">
+          <Button 
+            variant="default" 
+            onClick={() => {
+              // This button is shown only in the quote creation flow
+              // and is intended to pass the risk assessment value back to the parent
+              if (updateData && typeof updateData === 'function') {
+                updateData({
+                  totalActualizedRisk: getTotalResidualRisk(),
+                  completed: true
+                });
+              }
+            }}
+          >
+            Confirm Risk Assessment
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

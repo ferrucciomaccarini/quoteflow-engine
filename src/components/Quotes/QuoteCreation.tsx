@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,11 +10,14 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import StepWizard from "../common/StepWizard";
 import RiskAssessment from "./RiskAssessment";
-import { calculatePeriodicFee, calculatePresentValue, calculateServiceEvents, calculateServicePresentValue, calculateResidualRisk } from "@/utils/calculations";
+import { calculatePeriodicFee, calculatePresentValue, calculateServiceEvents, calculateServicePresentValue, calculateResidualRisk, calculateResidualValue } from "@/utils/calculations";
 import { saveQuote } from "@/utils/quoteService";
 import { useAuth } from "@/context/AuthContext";
 import { RiskData } from "@/types/database";
 import { supabase } from "@/integrations/supabase/client";
+import { Slider } from "@/components/ui/slider";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const CustomerNeedsStep = ({ data, updateData }: any) => {
   return (
@@ -560,10 +564,15 @@ const FinancialParametersStep = ({ data, updateData }: any) => {
   const machineValue = data.machineValue || 0;
   const servicesPresentValue = data.servicesPresentValue || 0;
   const primaryRisk = machineValue + servicesPresentValue;
+  const residualValuePercentage = data.residualValuePercentage || 10;
+  const residualValue = calculateResidualValue(machineValue, residualValuePercentage);
   
   React.useEffect(() => {
-    updateData({ primaryRisk });
-  }, [machineValue, servicesPresentValue, primaryRisk, updateData]);
+    updateData({ 
+      primaryRisk,
+      residualValue
+    });
+  }, [machineValue, servicesPresentValue, primaryRisk, residualValuePercentage, residualValue, updateData]);
   
   React.useEffect(() => {
     const contractDuration = data.contractDuration || 36;
@@ -571,11 +580,13 @@ const FinancialParametersStep = ({ data, updateData }: any) => {
     const bureauSpread = data.bureauSpread || 1;
     const ratingSpread = data.ratingSpread || 0.5;
     const totalRate = baseRate + bureauSpread + ratingSpread;
+    const residualValue = data.residualValue || 0;
     
     const equipmentFee = calculatePeriodicFee(
       machineValue,
       totalRate,
-      contractDuration
+      contractDuration,
+      residualValue
     );
     
     const servicesFee = calculatePeriodicFee(
@@ -597,6 +608,7 @@ const FinancialParametersStep = ({ data, updateData }: any) => {
     data.baseRate,
     data.bureauSpread,
     data.ratingSpread,
+    data.residualValue,
     machineValue,
     servicesPresentValue,
     updateData
@@ -700,6 +712,26 @@ const FinancialParametersStep = ({ data, updateData }: any) => {
                 onChange={(e) => updateData({ baseRate: parseFloat(e.target.value) || 5 })}
               />
             </div>
+            
+            <div className="space-y-2">
+              <Label>Residual Value (%)</Label>
+              <div className="flex items-center gap-2">
+                <Slider
+                  value={[residualValuePercentage]}
+                  min={0}
+                  max={50}
+                  step={1}
+                  onValueChange={(values) => updateData({ 
+                    residualValuePercentage: values[0],
+                    residualValue: calculateResidualValue(machineValue, values[0])
+                  })}
+                />
+                <span className="w-12 text-right">{residualValuePercentage}%</span>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Residual Value: ${residualValue.toLocaleString(undefined, {maximumFractionDigits: 0})}
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -743,6 +775,11 @@ const FinancialParametersStep = ({ data, updateData }: any) => {
               <span>Total Fee Before Risks (CanoBrkA):</span>
               <span className="text-primary">${data.totalFeeBeforeRisks?.toLocaleString(undefined, {maximumFractionDigits: 2}) || "0.00"}/month</span>
             </div>
+            {data.residualValue > 0 && (
+              <div className="text-xs text-muted-foreground mt-2">
+                * Equipment fee calculated with residual value of ${data.residualValue?.toLocaleString(undefined, {maximumFractionDigits: 0})}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -750,28 +787,134 @@ const FinancialParametersStep = ({ data, updateData }: any) => {
   );
 };
 
-const SummaryStep = ({ data, updateData }: any) => {
-  React.useEffect(() => {
-    if (data.riskVariables) {
-      const totalResidualRisk = data.riskVariables.reduce((sum: number, risk: any) => sum + risk.residualRisk, 0);
-      const contractDuration = data.contractDuration || 36;
-      const totalRate = data.totalRate || 5;
-      
-      const riskFee = calculatePeriodicFee(
-        totalResidualRisk,
-        totalRate,
-        contractDuration
-      );
-      
-      const totalFee = (data.equipmentFee || 0) + (data.servicesFee || 0) + (riskFee || 0);
-      
+const RiskAssessmentStep = ({ data, updateData }: any) => {
+  const [isConfirmed, setIsConfirmed] = useState(false);
+  const acquisitionValue = data.machineValue || 0;
+  
+  // Initialize a default risk data structure if not already present
+  const riskData = React.useMemo(() => {
+    if (data.riskData && data.riskData.riskVariables && data.riskData.riskVariables.length > 0) {
+      return {...data.riskData, acquisitionValue};
+    }
+    
+    const domains = ["Finance", "Usage", "Strategy", "Reputation"];
+    const variableNames: {[key: string]: string[]} = {
+      Finance: ["Installment Paid/Unpaid", "Forecasted Margin", "Final User Scoring Notch", "Final User Negative Act & Pledges"],
+      Usage: ["Covenants", "Machinery Performance", "Maintenance Roadmap", "Installment Paid/Unpaid"],
+      Strategy: ["CRM Planned Interactions", "Curves Convergence/Divergence", "Substitution Cost", "Mark-to-Market Reusable Materials"],
+      Reputation: ["Final User Survey", "Maintainer Survey", "Carbon Footprint", "Power Consumption"]
+    };
+    
+    let riskId = 1;
+    
+    const defaultRiskVariables = domains.flatMap(domain => {
+      return Array.from({ length: 4 }, (_, i) => {
+        const maxLossPercentage = Math.floor(Math.random() * 5) + 1; // Random between 1-5%
+        return {
+          id: `risk-${riskId++}`,
+          domain: domain as "Finance" | "Usage" | "Strategy" | "Reputation",
+          variable: variableNames[domain][i],
+          frequency: 10 + Math.floor(Math.random() * 30), // Random between 10-40%
+          maxLossPercentage,
+          maxLoss: acquisitionValue * (maxLossPercentage / 100),
+          mitigation: 50 + Math.floor(Math.random() * 30), // Random between 50-80%
+          residualRisk: 0 // Will be recalculated
+        };
+      });
+    });
+    
+    const calculatedRiskVariables = defaultRiskVariables.map(risk => ({
+      ...risk,
+      residualRisk: calculateResidualRisk(risk.maxLoss, risk.mitigation, risk.frequency)
+    }));
+    
+    return {
+      riskVariables: calculatedRiskVariables,
+      avPercentage: 50,
+      annualDiscountRate: data.baseRate || 5,
+      contractYears: (data.contractDuration || 36) / 12,
+      totalActualizedRisk: 0,
+      machineId: data.selectedMachineId || '',
+      acquisitionValue
+    };
+  }, [acquisitionValue, data.baseRate, data.contractDuration, data.machineValue, data.riskData, data.selectedMachineId]);
+
+  // Handle risk assessment completion
+  const handleRiskAssessmentUpdate = (updatedData: Partial<RiskData>) => {
+    if (updatedData.completed) {
+      setIsConfirmed(true);
       updateData({
-        totalResidualRisk,
-        riskFee,
-        totalFee
+        riskData: updatedData,
+        totalResidualRisk: updatedData.totalActualizedRisk || 0
+      });
+    } else {
+      updateData({
+        riskData: {...riskData, ...updatedData}
       });
     }
-  }, [data.riskVariables, data.contractDuration, data.totalRate, data.equipmentFee, data.servicesFee, updateData]);
+  };
+
+  if (isConfirmed) {
+    return (
+      <div className="space-y-6">
+        <Alert variant="success" className="bg-green-50 border-green-200">
+          <AlertCircle className="h-4 w-4 text-green-600" />
+          <AlertTitle className="text-green-800">Risk Assessment Confirmed</AlertTitle>
+          <AlertDescription className="text-green-700">
+            Risk assessment completed with a Total Actualized Residual Risk of ${data.totalResidualRisk?.toLocaleString(undefined, {maximumFractionDigits: 2}) || "0.00"}.
+          </AlertDescription>
+        </Alert>
+        
+        <div className="flex justify-end">
+          <Button 
+            variant="outline"
+            onClick={() => setIsConfirmed(false)}
+          >
+            Edit Risk Assessment
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Risk Assessment Required</AlertTitle>
+        <AlertDescription>
+          Please assess the risks for this quote and click "Confirm Risk Assessment" when done.
+        </AlertDescription>
+      </Alert>
+      
+      <RiskAssessment 
+        data={riskData} 
+        updateData={handleRiskAssessmentUpdate} 
+        standalone={false}
+      />
+    </div>
+  );
+};
+
+const SummaryStep = ({ data, updateData }: any) => {
+  React.useEffect(() => {
+    const totalResidualRisk = data.totalResidualRisk || 0;
+    const contractDuration = data.contractDuration || 36;
+    const totalRate = data.totalRate || 5;
+    
+    const riskFee = calculatePeriodicFee(
+      totalResidualRisk,
+      totalRate,
+      contractDuration
+    );
+    
+    const totalFee = (data.equipmentFee || 0) + (data.servicesFee || 0) + (riskFee || 0);
+    
+    updateData({
+      riskFee,
+      totalFee
+    });
+  }, [data.totalResidualRisk, data.contractDuration, data.totalRate, data.equipmentFee, data.servicesFee, updateData]);
 
   return (
     <div className="space-y-6">
@@ -846,6 +989,11 @@ const SummaryStep = ({ data, updateData }: any) => {
                 <p className="text-sm text-muted-foreground mt-1">
                   Value: ${data.machineValue?.toLocaleString() || "0"}
                 </p>
+                {data.residualValuePercentage > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    Residual Value: ${data.residualValue?.toLocaleString() || "0"} ({data.residualValuePercentage}%)
+                  </p>
+                )}
               </div>
               
               <div>
@@ -906,6 +1054,13 @@ const SummaryStep = ({ data, updateData }: any) => {
                 <div className="flex justify-between">
                   <span>Total Interest Rate (InteTot):</span>
                   <span className="font-semibold">{data.totalRate?.toFixed(2) || 0}%</span>
+                </div>
+              </div>
+              
+              <div className="p-3 border rounded-md bg-primary/5">
+                <div className="flex justify-between">
+                  <span>Total Actualized Residual Risk:</span>
+                  <span className="font-semibold">${data.totalResidualRisk?.toLocaleString(undefined, {maximumFractionDigits: 2}) || "0.00"}</span>
                 </div>
               </div>
             </CardContent>
@@ -999,37 +1154,6 @@ const QuoteCreation = () => {
       });
     }
   };
-  
-  const initializeRiskData = () => {
-    const domains = ["Finance", "Usage", "Strategy", "Reputation"];
-    let riskId = 1;
-    
-    const defaultRiskVariables = domains.flatMap(domain => {
-      return Array.from({ length: 4 }, (_, i) => ({
-        id: `risk-${riskId++}`,
-        domain: domain as "Finance" | "Usage" | "Strategy" | "Reputation",
-        variable: `${domain} Risk ${i + 1}`,
-        frequency: 10, // Default 10%
-        maxLoss: 1000, // Default $1000
-        mitigation: 50, // Default 50%
-        residualRisk: 50 // Will be recalculated
-      }));
-    });
-    
-    const calculatedRiskVariables = defaultRiskVariables.map(risk => ({
-      ...risk,
-      residualRisk: calculateResidualRisk(risk.maxLoss, risk.mitigation, risk.frequency)
-    }));
-    
-    return {
-      riskVariables: calculatedRiskVariables,
-      avPercentage: 50,
-      annualDiscountRate: 5,
-      contractYears: 3,
-      totalActualizedRisk: 0,
-      machineId: ''
-    };
-  };
 
   const steps = [
     {
@@ -1060,10 +1184,7 @@ const QuoteCreation = () => {
       id: "risk-assessment",
       title: "Risk Assessment",
       description: "Evaluate risks according to Paradigmix methodology",
-      content: <RiskAssessment 
-        data={initializeRiskData()} 
-        updateData={() => {}} 
-      />
+      content: <RiskAssessmentStep />
     },
     {
       id: "summary",
@@ -1095,7 +1216,8 @@ const QuoteCreation = () => {
           bureauSpread: 1,
           ratingSpread: 0.5,
           totalRate: 6.5,
-          riskData: initializeRiskData()
+          residualValuePercentage: 10,
+          residualValue: 0
         }}
       />
     </div>

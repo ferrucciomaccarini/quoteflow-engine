@@ -12,7 +12,9 @@ import { useAuth } from "@/context/AuthContext";
 interface Quote {
   id: string;
   customer_name: string;
+  customer_id?: string;
   machine_name: string;
+  machine_id?: string;
   total_fee: number;
   created_at: string;
   status: string;
@@ -70,8 +72,36 @@ const QuoteList = () => {
   // Fix the cell functions to work with the row data directly instead of using getValue()
   const quoteColumns: Column<Quote>[] = [
     { header: "Quote ID", accessorKey: "id" },
-    { header: "Customer", accessorKey: "customer_name" },
-    { header: "Equipment", accessorKey: "machine_name" },
+    { 
+      header: "Customer", 
+      accessorKey: "customer_name",
+      cell: (row) => (
+        row.customer_id ? 
+        <Button 
+          variant="link" 
+          className="p-0 h-auto font-normal" 
+          onClick={() => navigate(`/customers/${row.customer_id}`)}
+        >
+          {row.customer_name}
+        </Button> :
+        <span>{row.customer_name}</span>
+      )
+    },
+    { 
+      header: "Equipment", 
+      accessorKey: "machine_name",
+      cell: (row) => (
+        row.machine_id ? 
+        <Button 
+          variant="link" 
+          className="p-0 h-auto font-normal" 
+          onClick={() => navigate(`/machines/${row.machine_id}`)}
+        >
+          {row.machine_name}
+        </Button> :
+        <span>{row.machine_name}</span>
+      )
+    },
     { 
       header: "Amount", 
       accessorKey: "total_fee",
