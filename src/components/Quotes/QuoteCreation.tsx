@@ -624,7 +624,7 @@ const FinancialParametersStep = ({ data, updateData }: any) => {
       new Date(b.valid_from).getTime() - new Date(a.valid_from).getTime()
     )[0];
     
-    return mostRecentSpread?.spread_rate ?? (11 - score) * 0.2;
+    return mostRecentSpread?.spread_rate ?? (11 - score) * 0.002;
   };
   
   const getMostRecentRatingSpread = (score: number): number => {
@@ -640,7 +640,7 @@ const FinancialParametersStep = ({ data, updateData }: any) => {
       new Date(b.valid_from).getTime() - new Date(a.valid_from).getTime()
     )[0];
     
-    return mostRecentSpread?.spread_rate ?? (11 - score) * 0.1;
+    return mostRecentSpread?.spread_rate ?? (11 - score) * 0.001;
   };
   
   React.useEffect(() => {
@@ -653,9 +653,9 @@ const FinancialParametersStep = ({ data, updateData }: any) => {
   React.useEffect(() => {
     const contractDuration = data.contractDuration || 36;
     const baseRate = data.baseRate || 5;
-    const bureauSpread = data.bureauSpread || 1;
-    const ratingSpread = data.ratingSpread || 0.5;
-    const totalRate = baseRate + bureauSpread + ratingSpread;
+    const bureauSpread = data.bureauSpread || 0.01;
+    const ratingSpread = data.ratingSpread || 0.005;
+    const totalRate = baseRate + (bureauSpread * 100) + (ratingSpread * 100);
     const residualValue = data.residualValue || 0;
     
     const equipmentFee = calculatePeriodicFee(
@@ -744,15 +744,18 @@ const FinancialParametersStep = ({ data, updateData }: any) => {
                   <SelectValue placeholder="Select credit bureau score" />
                 </SelectTrigger>
                 <SelectContent>
-                  {[...Array(10)].map((_, i) => (
-                    <SelectItem key={i + 1} value={(i + 1).toString()}>
-                      {i + 1} - {getMostRecentBureauSpread(i + 1).toFixed(2)}% spread
-                    </SelectItem>
-                  ))}
+                  {[...Array(10)].map((_, i) => {
+                    const spread = getMostRecentBureauSpread(i + 1);
+                    return (
+                      <SelectItem key={i + 1} value={(i + 1).toString()}>
+                        {i + 1} - {spread.toFixed(4)} spread
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
               {data.bureauSpread && (
-                <p className="text-xs text-muted-foreground">Current spread: {data.bureauSpread.toFixed(2)}%</p>
+                <p className="text-xs text-muted-foreground">Current spread: {data.bureauSpread.toFixed(4)}</p>
               )}
             </div>
             
@@ -771,15 +774,18 @@ const FinancialParametersStep = ({ data, updateData }: any) => {
                   <SelectValue placeholder="Select internal rating" />
                 </SelectTrigger>
                 <SelectContent>
-                  {[...Array(10)].map((_, i) => (
-                    <SelectItem key={i + 1} value={(i + 1).toString()}>
-                      {i + 1} - {getMostRecentRatingSpread(i + 1).toFixed(2)}% spread
-                    </SelectItem>
-                  ))}
+                  {[...Array(10)].map((_, i) => {
+                    const spread = getMostRecentRatingSpread(i + 1);
+                    return (
+                      <SelectItem key={i + 1} value={(i + 1).toString()}>
+                        {i + 1} - {spread.toFixed(4)} spread
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
               {data.ratingSpread && (
-                <p className="text-xs text-muted-foreground">Current spread: {data.ratingSpread.toFixed(2)}%</p>
+                <p className="text-xs text-muted-foreground">Current spread: {data.ratingSpread.toFixed(4)}</p>
               )}
             </div>
           </CardContent>
