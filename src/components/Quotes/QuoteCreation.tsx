@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,8 +15,9 @@ import { useAuth } from "@/context/AuthContext";
 import { RiskData } from "@/types/database";
 import { supabase } from "@/integrations/supabase/client";
 import { Slider } from "@/components/ui/slider";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { CreditBureauSpread, InternalRatingSpread } from "@/types/spreads";
 
 const CustomerNeedsStep = ({ data, updateData }: any) => {
   return (
@@ -566,6 +566,82 @@ const FinancialParametersStep = ({ data, updateData }: any) => {
   const primaryRisk = machineValue + servicesPresentValue;
   const residualValuePercentage = data.residualValuePercentage || 10;
   const residualValue = calculateResidualValue(machineValue, residualValuePercentage);
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [isLoadingSpreads, setIsLoadingSpreads] = useState(false);
+  const [bureauSpreads, setBureauSpreads] = useState<CreditBureauSpread[]>([]);
+  const [ratingSpreads, setRatingSpreads] = useState<InternalRatingSpread[]>([]);
+  
+  useEffect(() => {
+    const fetchSpreadRates = async () => {
+      if (!user) return;
+      
+      setIsLoadingSpreads(true);
+      try {
+        const { data: bureauData, error: bureauError } = await supabase
+          .from('credit_bureau_spreads')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('valid_from', { ascending: false });
+          
+        if (bureauError) throw bureauError;
+        
+        const { data: ratingData, error: ratingError } = await supabase
+          .from('internal_rating_spreads')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('valid_from', { ascending: false });
+          
+        if (ratingError) throw ratingError;
+        
+        setBureauSpreads(bureauData || []);
+        setRatingSpreads(ratingData || []);
+      } catch (error) {
+        console.error('Error fetching spread rates:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load spread rates. Using default calculations.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoadingSpreads(false);
+      }
+    };
+    
+    fetchSpreadRates();
+  }, [user, toast]);
+  
+  const getMostRecentBureauSpread = (score: number): number => {
+    const now = new Date();
+    
+    const validSpreads = bureauSpreads.filter(spread => 
+      spread.bureau_score === score && 
+      new Date(spread.valid_from) <= now && 
+      (!spread.valid_to || new Date(spread.valid_to) > now)
+    );
+    
+    const mostRecentSpread = validSpreads.sort((a, b) => 
+      new Date(b.valid_from).getTime() - new Date(a.valid_from).getTime()
+    )[0];
+    
+    return mostRecentSpread?.spread_rate ?? (11 - score) * 0.2;
+  };
+  
+  const getMostRecentRatingSpread = (score: number): number => {
+    const now = new Date();
+    
+    const validSpreads = ratingSpreads.filter(spread => 
+      spread.rating_score === score && 
+      new Date(spread.valid_from) <= now && 
+      (!spread.valid_to || new Date(spread.valid_to) > now)
+    );
+    
+    const mostRecentSpread = validSpreads.sort((a, b) => 
+      new Date(b.valid_from).getTime() - new Date(a.valid_from).getTime()
+    )[0];
+    
+    return mostRecentSpread?.spread_rate ?? (11 - score) * 0.1;
+  };
   
   React.useEffect(() => {
     updateData({ 
@@ -645,42 +721,66 @@ const FinancialParametersStep = ({ data, updateData }: any) => {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Customer Credit Assessment</CardTitle>
+            {isLoadingSpreads && (
+              <div className="flex items-center space-x-2 text-muted-foreground text-sm">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Loading spreads...</span>
+              </div>
+            )}
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="creditBureau">Credit Bureau Score (1-10)</Label>
-              <Input 
-                id="creditBureau"
-                type="number"
-                min="1"
-                max="10"
-                value={data.creditBureau || ""}
-                onChange={(e) => {
-                  const value = parseInt(e.target.value);
-                  if (value >= 1 && value <= 10) {
-                    const bureauSpread = (11 - value) * 0.2;
-                    updateData({ creditBureau: value, bureauSpread });
-                  }
+              <Select 
+                value={data.creditBureau?.toString() || ""} 
+                onValueChange={(value) => {
+                  const score = parseInt(value);
+                  const bureauSpread = getMostRecentBureauSpread(score);
+                  updateData({ creditBureau: score, bureauSpread });
                 }}
-              />
+                disabled={isLoadingSpreads}
+              >
+                <SelectTrigger id="creditBureau">
+                  <SelectValue placeholder="Select credit bureau score" />
+                </SelectTrigger>
+                <SelectContent>
+                  {[...Array(10)].map((_, i) => (
+                    <SelectItem key={i + 1} value={(i + 1).toString()}>
+                      {i + 1} - {getMostRecentBureauSpread(i + 1).toFixed(2)}% spread
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {data.bureauSpread && (
+                <p className="text-xs text-muted-foreground">Current spread: {data.bureauSpread.toFixed(2)}%</p>
+              )}
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="internalRating">Internal Rating (1-10)</Label>
-              <Input 
-                id="internalRating"
-                type="number"
-                min="1"
-                max="10"
-                value={data.internalRating || ""}
-                onChange={(e) => {
-                  const value = parseInt(e.target.value);
-                  if (value >= 1 && value <= 10) {
-                    const ratingSpread = (11 - value) * 0.1;
-                    updateData({ internalRating: value, ratingSpread });
-                  }
+              <Select 
+                value={data.internalRating?.toString() || ""} 
+                onValueChange={(value) => {
+                  const score = parseInt(value);
+                  const ratingSpread = getMostRecentRatingSpread(score);
+                  updateData({ internalRating: score, ratingSpread });
                 }}
-              />
+                disabled={isLoadingSpreads}
+              >
+                <SelectTrigger id="internalRating">
+                  <SelectValue placeholder="Select internal rating" />
+                </SelectTrigger>
+                <SelectContent>
+                  {[...Array(10)].map((_, i) => (
+                    <SelectItem key={i + 1} value={(i + 1).toString()}>
+                      {i + 1} - {getMostRecentRatingSpread(i + 1).toFixed(2)}% spread
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {data.ratingSpread && (
+                <p className="text-xs text-muted-foreground">Current spread: {data.ratingSpread.toFixed(2)}%</p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -791,7 +891,6 @@ const RiskAssessmentStep = ({ data, updateData }: any) => {
   const [isConfirmed, setIsConfirmed] = useState(false);
   const acquisitionValue = data.machineValue || 0;
   
-  // Initialize a default risk data structure if not already present
   const riskData = React.useMemo(() => {
     if (data.riskData && data.riskData.riskVariables && data.riskData.riskVariables.length > 0) {
       return {...data.riskData, acquisitionValue};
@@ -839,7 +938,6 @@ const RiskAssessmentStep = ({ data, updateData }: any) => {
     };
   }, [acquisitionValue, data.baseRate, data.contractDuration, data.machineValue, data.riskData, data.selectedMachineId]);
 
-  // Handle risk assessment completion
   const handleRiskAssessmentUpdate = (updatedData: Partial<RiskData>) => {
     if (updatedData.completed) {
       setIsConfirmed(true);
