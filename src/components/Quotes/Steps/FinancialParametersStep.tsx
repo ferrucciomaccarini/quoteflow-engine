@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -181,7 +180,10 @@ const FinancialParametersStep: React.FC<StepComponentProps> = ({ data, updateDat
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="creditBureau">Credit Bureau Score (1-10)</Label>
+              <Label htmlFor="creditBureau" className="flex items-center">
+                Credit Bureau Score (1-10)
+                <span className="text-red-500 ml-1">*</span>
+              </Label>
               <Select 
                 value={data.creditBureau?.toString() || ""} 
                 onValueChange={(value) => {
@@ -191,7 +193,7 @@ const FinancialParametersStep: React.FC<StepComponentProps> = ({ data, updateDat
                 }}
                 disabled={isLoadingSpreads}
               >
-                <SelectTrigger id="creditBureau">
+                <SelectTrigger id="creditBureau" className={!data.creditBureau ? "border-red-300" : ""}>
                   <SelectValue placeholder="Select credit bureau score" />
                 </SelectTrigger>
                 <SelectContent>
@@ -205,13 +207,19 @@ const FinancialParametersStep: React.FC<StepComponentProps> = ({ data, updateDat
                   })}
                 </SelectContent>
               </Select>
+              {!data.creditBureau && (
+                <p className="text-sm text-red-500">Credit Bureau score is required</p>
+              )}
               {data.bureauSpread && (
                 <p className="text-xs text-muted-foreground">Current spread: {data.bureauSpread.toFixed(4)}</p>
               )}
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="internalRating">Internal Rating (1-10)</Label>
+              <Label htmlFor="internalRating" className="flex items-center">
+                Internal Rating (1-10)
+                <span className="text-red-500 ml-1">*</span>
+              </Label>
               <Select 
                 value={data.internalRating?.toString() || ""} 
                 onValueChange={(value) => {
@@ -221,7 +229,7 @@ const FinancialParametersStep: React.FC<StepComponentProps> = ({ data, updateDat
                 }}
                 disabled={isLoadingSpreads}
               >
-                <SelectTrigger id="internalRating">
+                <SelectTrigger id="internalRating" className={!data.internalRating ? "border-red-300" : ""}>
                   <SelectValue placeholder="Select internal rating" />
                 </SelectTrigger>
                 <SelectContent>
@@ -235,6 +243,9 @@ const FinancialParametersStep: React.FC<StepComponentProps> = ({ data, updateDat
                   })}
                 </SelectContent>
               </Select>
+              {!data.internalRating && (
+                <p className="text-sm text-red-500">Internal rating is required</p>
+              )}
               {data.ratingSpread && (
                 <p className="text-xs text-muted-foreground">Current spread: {data.ratingSpread.toFixed(4)}</p>
               )}

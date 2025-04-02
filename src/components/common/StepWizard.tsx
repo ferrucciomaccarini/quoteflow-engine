@@ -2,12 +2,16 @@
 import React, { useState, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 interface Step {
   id: string;
   title: string;
   description: string;
   content: ReactNode;
+  validate?: (data: any) => string | null;
 }
 
 interface StepWizardProps {
@@ -15,6 +19,7 @@ interface StepWizardProps {
   onComplete: (data: any) => void;
   initialData?: any;
   className?: string;
+  isSubmitting?: boolean;
 }
 
 const StepWizard = ({
@@ -22,16 +27,29 @@ const StepWizard = ({
   onComplete,
   initialData = {},
   className,
+  isSubmitting = false,
 }: StepWizardProps) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [data, setData] = useState(initialData);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const currentStep = steps[currentStepIndex];
   const isFirstStep = currentStepIndex === 0;
   const isLastStep = currentStepIndex === steps.length - 1;
 
   const handleNext = () => {
+    const currentValidator = currentStep.validate;
+    
+    if (currentValidator) {
+      const error = currentValidator(data);
+      if (error) {
+        setValidationError(error);
+        return;
+      }
+    }
+    
+    setValidationError(null);
+    
     if (isLastStep) {
       handleComplete();
     } else {
@@ -40,28 +58,29 @@ const StepWizard = ({
   };
 
   const handleBack = () => {
+    setValidationError(null);
     setCurrentStepIndex((prev) => prev - 1);
   };
 
   const handleStepClick = (index: number) => {
     if (index < currentStepIndex) {
+      setValidationError(null);
       setCurrentStepIndex(index);
     }
   };
 
   const handleComplete = () => {
-    setIsSubmitting(true);
     try {
       onComplete(data);
     } catch (error) {
       console.error("Error completing wizard:", error);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
   const updateData = (newData: any) => {
     setData((prev: any) => ({ ...prev, ...newData }));
+    // Clear validation error when data is updated
+    setValidationError(null);
   };
 
   return (
@@ -79,7 +98,7 @@ const StepWizard = ({
               className={cn(
                 "flex items-center justify-center w-8 h-8 rounded-full mr-2 transition-colors",
                 index < currentStepIndex
-                  ? "bg-primary text-primary-foreground"
+                  ? "bg-green-500 text-primary-foreground"
                   : index === currentStepIndex
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted text-muted-foreground"
@@ -87,7 +106,13 @@ const StepWizard = ({
               onClick={() => handleStepClick(index)}
               style={{ cursor: index < currentStepIndex ? "pointer" : "default" }}
             >
-              {index + 1}
+              {index < currentStepIndex ? (
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              ) : (
+                index + 1
+              )}
             </div>
             <div
               className={cn(
@@ -103,6 +128,13 @@ const StepWizard = ({
           </div>
         ))}
       </div>
+
+      {validationError && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{validationError}</AlertDescription>
+        </Alert>
+      )}
 
       <div className="pmix-card mb-6">
         <h3 className="text-lg font-semibold text-primary mb-1">
@@ -130,6 +162,7 @@ const StepWizard = ({
           Back
         </Button>
         <Button onClick={handleNext} disabled={isSubmitting}>
+          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {isLastStep ? "Complete" : "Next"}
         </Button>
       </div>

@@ -1,7 +1,8 @@
 
 import React, { useState } from "react";
-import { Alert, AlertCircle, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"; 
 import { Button } from "@/components/ui/button";
+import { AlertCircle } from "lucide-react";
 import RiskAssessment from "../RiskAssessment";
 import { RiskData } from "@/types/database";
 import { StepComponentProps } from "./types";

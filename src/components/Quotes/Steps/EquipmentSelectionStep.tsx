@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Machine, StepComponentProps } from "./types";
+import { Loader2 } from "lucide-react";
 
 const EquipmentSelectionStep: React.FC<StepComponentProps> = ({ data, updateData }) => {
   const [machines, setMachines] = useState<Machine[]>([]);
@@ -71,39 +72,47 @@ const EquipmentSelectionStep: React.FC<StepComponentProps> = ({ data, updateData
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="selectedMachineId">Select Equipment from Your Machine Catalog</Label>
+        <Label htmlFor="selectedMachineId" className="flex items-center">
+          Select Equipment from Your Machine Catalog
+          <span className="text-red-500 ml-1">*</span>
+        </Label>
         {isLoading ? (
           <div className="flex items-center space-x-2">
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+            <Loader2 className="h-4 w-4 animate-spin" />
             <span className="text-sm text-muted-foreground">Loading machines...</span>
           </div>
         ) : (
-          <Select 
-            value={data.selectedMachineId || ""} 
-            onValueChange={(value) => {
-              const machine = machines.find(m => m.id === value);
-              updateData({ 
-                selectedMachineId: value,
-                machineName: machine?.name,
-                machineValue: machine?.acquisition_value || 0
-              });
-            }}
-          >
-            <SelectTrigger id="selectedMachineId">
-              <SelectValue placeholder="Select machinery" />
-            </SelectTrigger>
-            <SelectContent>
-              {machines.length === 0 ? (
-                <SelectItem value="none" disabled>No machines available in catalog</SelectItem>
-              ) : (
-                machines.map(machine => (
-                  <SelectItem key={machine.id} value={machine.id}>
-                    {machine.name} - ${machine.acquisition_value.toLocaleString()}
-                  </SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
+          <>
+            <Select 
+              value={data.selectedMachineId || ""} 
+              onValueChange={(value) => {
+                const machine = machines.find(m => m.id === value);
+                updateData({ 
+                  selectedMachineId: value,
+                  machineName: machine?.name,
+                  machineValue: machine?.acquisition_value || 0
+                });
+              }}
+            >
+              <SelectTrigger id="selectedMachineId" className={!data.selectedMachineId ? "border-red-300" : ""}>
+                <SelectValue placeholder="Select machinery" />
+              </SelectTrigger>
+              <SelectContent>
+                {machines.length === 0 ? (
+                  <SelectItem value="none" disabled>No machines available in catalog</SelectItem>
+                ) : (
+                  machines.map(machine => (
+                    <SelectItem key={machine.id} value={machine.id}>
+                      {machine.name} - ${machine.acquisition_value.toLocaleString()}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+            {!data.selectedMachineId && (
+              <p className="text-sm text-red-500">Please select a machine</p>
+            )}
+          </>
         )}
         
         {machines.length === 0 && !isLoading && (

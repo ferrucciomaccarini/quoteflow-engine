@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -19,11 +19,14 @@ const QuoteCreation = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isAuthenticated } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const handleComplete = async (data: any) => {
     console.log("Quote completed:", data);
     
     try {
+      setIsSubmitting(true);
+      
       if (!isAuthenticated) {
         toast({
           title: "Authentication Required",
@@ -57,7 +60,51 @@ const QuoteCreation = () => {
         description: "Failed to save the quote. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
+  };
+
+  const validateCustomerNeeds = (data: any) => {
+    if (!data.customerName) {
+      return "Customer name is required";
+    }
+    if (!data.timeHorizon || data.timeHorizon <= 0) {
+      return "Valid time horizon is required";
+    }
+    if (!data.intensityHours || data.intensityHours <= 0) {
+      return "Usage intensity is required";
+    }
+    return null;
+  };
+
+  const validateEquipmentSelection = (data: any) => {
+    if (!data.selectedMachineId) {
+      return "Please select a machine";
+    }
+    return null;
+  };
+
+  const validateFinancialParameters = (data: any) => {
+    if (!data.creditBureau) {
+      return "Credit Bureau score is required";
+    }
+    if (!data.internalRating) {
+      return "Internal rating is required";
+    }
+    return null;
+  };
+
+  const validateServiceSelection = (data: any) => {
+    // Service selection is optional
+    return null;
+  };
+
+  const validateRiskAssessment = (data: any) => {
+    if (!data.riskData?.completed) {
+      return "Please complete the risk assessment";
+    }
+    return null;
   };
 
   const steps = [
@@ -65,31 +112,36 @@ const QuoteCreation = () => {
       id: "customer-needs",
       title: "Customer Needs",
       description: "Define the customer's business requirements",
-      content: <CustomerNeedsStep />
+      content: <CustomerNeedsStep />,
+      validate: validateCustomerNeeds
     },
     {
       id: "equipment-selection",
       title: "Equipment Selection",
       description: "Select the appropriate machinery",
-      content: <EquipmentSelectionStep />
+      content: <EquipmentSelectionStep />,
+      validate: validateEquipmentSelection
     },
     {
       id: "service-selection",
       title: "Service Selection",
       description: "Select the services to include",
-      content: <ServiceSelectionStep />
+      content: <ServiceSelectionStep />,
+      validate: validateServiceSelection
     },
     {
       id: "financial-parameters",
       title: "Financial Parameters",
       description: "Define the financial parameters of the contract",
-      content: <FinancialParametersStep />
+      content: <FinancialParametersStep />,
+      validate: validateFinancialParameters
     },
     {
       id: "risk-assessment",
       title: "Risk Assessment",
       description: "Evaluate risks according to Paradigmix methodology",
-      content: <RiskAssessmentStep />
+      content: <RiskAssessmentStep />,
+      validate: validateRiskAssessment
     },
     {
       id: "summary",
@@ -111,6 +163,7 @@ const QuoteCreation = () => {
       <StepWizard
         steps={steps}
         onComplete={handleComplete}
+        isSubmitting={isSubmitting}
         initialData={{
           timeHorizon: 36,
           intensityHours: 2000,
