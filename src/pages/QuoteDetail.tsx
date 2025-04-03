@@ -1,5 +1,6 @@
 
-import QuoteDetailView from "@/components/Quotes/QuoteDetailView";
+import React from "react";
+import QuoteDetailView from "@/components/Quotes/QuoteDetail";
 import MainLayout from "@/components/Layout/MainLayout";
 
 const QuoteDetail = () => {
