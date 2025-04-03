@@ -66,8 +66,8 @@ const QuoteCreation = () => {
   };
 
   const validateCustomerNeeds = (data: any) => {
-    if (!data.customerName) {
-      return "Customer name is required";
+    if (!data.customerId) {
+      return "Please select a customer";
     }
     if (!data.timeHorizon || data.timeHorizon <= 0) {
       return "Valid time horizon is required";

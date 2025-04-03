@@ -1,29 +1,93 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StepComponentProps } from "./types";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+interface Customer {
+  id: string;
+  name: string;
+  contact_person: string | null;
+}
 
 const CustomerNeedsStep: React.FC<StepComponentProps> = ({ data, updateData }) => {
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        setLoading(true);
+        const { data: customersData, error } = await supabase
+          .from('customers')
+          .select('id, name, contact_person');
+        
+        if (error) throw error;
+        
+        setCustomers(customersData || []);
+      } catch (error: any) {
+        console.error('Error fetching customers:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load customer list",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCustomers();
+  }, [toast]);
+
+  const handleCustomerChange = (customerId: string) => {
+    const selectedCustomer = customers.find(c => c.id === customerId);
+    if (selectedCustomer) {
+      updateData({ 
+        customerId: customerId,
+        customerName: selectedCustomer.name,
+        contactPerson: selectedCustomer.contact_person || ''
+      });
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="customerName" className="flex items-center">
-            Customer Name
+            Customer
             <span className="text-red-500 ml-1">*</span>
           </Label>
-          <Input 
-            id="customerName"
-            value={data.customerName || ""}
-            onChange={(e) => updateData({ customerName: e.target.value })}
-            placeholder="Enter customer name"
-            className={!data.customerName ? "border-red-300" : ""}
-            aria-required="true"
-          />
-          {!data.customerName && (
-            <p className="text-sm text-red-500">Customer name is required</p>
+          {loading ? (
+            <div className="h-10 w-full animate-pulse bg-gray-200 rounded-md"></div>
+          ) : (
+            <Select 
+              value={data.customerId || ""} 
+              onValueChange={handleCustomerChange}
+            >
+              <SelectTrigger id="customerName" className={!data.customerId ? "border-red-300" : ""}>
+                <SelectValue placeholder="Select a customer" />
+              </SelectTrigger>
+              <SelectContent className="max-h-80">
+                {customers.length === 0 ? (
+                  <div className="p-2 text-sm text-gray-500">No customers found</div>
+                ) : (
+                  customers.map((customer) => (
+                    <SelectItem key={customer.id} value={customer.id}>
+                      {customer.name}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          )}
+          {!data.customerId && (
+            <p className="text-sm text-red-500">Customer selection is required</p>
           )}
         </div>
         <div className="space-y-2">
@@ -33,6 +97,7 @@ const CustomerNeedsStep: React.FC<StepComponentProps> = ({ data, updateData }) =
             value={data.contactPerson || ""}
             onChange={(e) => updateData({ contactPerson: e.target.value })}
             placeholder="Enter contact person"
+            readOnly={data.customerId ? true : false}
           />
         </div>
       </div>
