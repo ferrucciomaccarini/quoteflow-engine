@@ -1,238 +1,178 @@
-
-import React, { useState, useEffect } from "react";
-import { useAuth } from "@/context/AuthContext";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { DataTable } from "@/components/ui/DataTable";
+import React, { useState, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, FileText } from "lucide-react";
-import { Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import Logo from "../common/Logo";
+import { cn } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
-interface Quote {
+interface Step {
   id: string;
-  customer_name: string;
-  machine_name: string;
-  total_fee: number;
-  created_at: string;
-  status: string;
+  title: string;
+  description: string;
+  content: ReactNode | ((props: any) => ReactNode);
+  validate?: (data: any) => string | null;
 }
 
-const DashboardPage = () => {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [recentQuotes, setRecentQuotes] = useState<Quote[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [machineCount, setMachineCount] = useState(0);
-  const [quoteCount, setQuoteCount] = useState(0);
-  const [monthlyRevenue, setMonthlyRevenue] = useState(0);
+interface StepWizardProps {
+  steps: Step[];
+  onComplete: (data: any) => void;
+  initialData?: any;
+  className?: string;
+  isSubmitting?: boolean;
+}
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      if (!user) return;
+const StepWizard = ({
+  steps,
+  onComplete,
+  initialData = {},
+  className,
+  isSubmitting = false,
+}: StepWizardProps) => {
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [data, setData] = useState(initialData);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
-      try {
-        setIsLoading(true);
+  const currentStep = steps[currentStepIndex];
+  const isFirstStep = currentStepIndex === 0;
+  const isLastStep = currentStepIndex === steps.length - 1;
 
-        // Fetch recent quotes
-        const { data: quotesData, error: quotesError } = await supabase
-          .from('quotes')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(5);
-
-        if (quotesError) throw quotesError;
-        setRecentQuotes(quotesData || []);
-        
-        // Get quote count
-        const { count: quoteCountResult, error: quoteCountError } = await supabase
-          .from('quotes')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id);
-          
-        if (quoteCountError) throw quoteCountError;
-        setQuoteCount(quoteCountResult || 0);
-
-        // Get machine count
-        const { count: machineCountResult, error: machineCountError } = await supabase
-          .from('machines')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id);
-          
-        if (machineCountError) throw machineCountError;
-        setMachineCount(machineCountResult || 0);
-
-        // Calculate monthly revenue (sum of all quote fees)
-        const { data: revenueData, error: revenueError } = await supabase
-          .from('quotes')
-          .select('total_fee')
-          .eq('user_id', user.id)
-          .eq('status', 'Approved');
-
-        if (revenueError) throw revenueError;
-        const totalRevenue = revenueData?.reduce((sum, quote) => sum + (quote.total_fee || 0), 0) || 0;
-        setMonthlyRevenue(totalRevenue);
-      } catch (error: any) {
-        console.error('Error fetching dashboard data:', error);
-        toast({
-          title: "Error",
-          description: error.message || "Failed to load dashboard data",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
+  const handleNext = () => {
+    const currentValidator = currentStep.validate;
+    
+    if (currentValidator) {
+      const error = currentValidator(data);
+      if (error) {
+        setValidationError(error);
+        return;
       }
-    };
-
-    fetchDashboardData();
-  }, [user, toast]);
-
-  const quoteColumns = [
-    { header: "Quote ID", accessorKey: "id" },
-    { header: "Customer", accessorKey: "customer_name" },
-    { header: "Equipment", accessorKey: "machine_name" },
-    { 
-      header: "Amount", 
-      accessorKey: "total_fee",
-      cell: (row: any) => `$${parseFloat(row.total_fee).toLocaleString()}`
-    },
-    { 
-      header: "Date", 
-      accessorKey: "created_at",
-      cell: (row: any) => new Date(row.created_at).toLocaleDateString()
-    },
-    { 
-      header: "Status", 
-      accessorKey: "status",
-      cell: (row: any) => (
-        <span className={`px-2 py-1 text-xs rounded-full ${
-          row.status === "Approved" ? "bg-green-100 text-green-800" :
-          row.status === "Pending" ? "bg-yellow-100 text-yellow-800" :
-          "bg-gray-100 text-gray-800"
-        }`}>
-          {row.status}
-        </span>
-      )
-    },
-    {
-      header: "Actions",
-      accessorKey: "id",
-      cell: (row: any) => (
-        <div className="flex space-x-2">
-          <Button variant="outline" size="sm" asChild>
-            <Link to={`/quotes/${row.id}`}>
-              <FileText className="mr-1" size={14} />
-              View
-            </Link>
-          </Button>
-        </div>
-      )
     }
-  ];
+    
+    setValidationError(null);
+    
+    if (isLastStep) {
+      handleComplete();
+    } else {
+      setCurrentStepIndex((prev) => prev + 1);
+    }
+  };
+
+  const handleBack = () => {
+    setValidationError(null);
+    setCurrentStepIndex((prev) => prev - 1);
+  };
+
+  const handleStepClick = (index: number) => {
+    if (index < currentStepIndex) {
+      setValidationError(null);
+      setCurrentStepIndex(index);
+    }
+  };
+
+  const handleComplete = () => {
+    try {
+      onComplete(data);
+    } catch (error) {
+      console.error("Error completing wizard:", error);
+    }
+  };
+
+  const updateData = (newData: any) => {
+    setData((prev: any) => ({ ...prev, ...newData }));
+    // Clear validation error when data is updated
+    setValidationError(null);
+  };
+
+  const renderStepContent = () => {
+    const { content } = currentStep;
+    const props = { data, updateData };
+    
+    if (typeof content === 'function') {
+      return content(props);
+    }
+    
+    return content;
+  };
 
   return (
-    <div>
-      {/* Add Logo at the top center */}
-      <div className="mb-6">
-        <Logo className="mb-6" />
+    <div className={cn("flex flex-col", className)}>
+      <div className="flex mb-6 overflow-x-auto">
+        {steps.map((step, index) => (
+          <div
+            key={step.id}
+            className={cn(
+              "flex items-center mr-4",
+              index > 0 && "ml-2"
+            )}
+          >
+            <div
+              className={cn(
+                "flex items-center justify-center w-8 h-8 rounded-full mr-2 transition-colors",
+                index < currentStepIndex
+                  ? "bg-green-500 text-primary-foreground"
+                  : index === currentStepIndex
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
+              )}
+              onClick={() => handleStepClick(index)}
+              style={{ cursor: index < currentStepIndex ? "pointer" : "default" }}
+            >
+              {index < currentStepIndex ? (
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              ) : (
+                index + 1
+              )}
+            </div>
+            <div
+              className={cn(
+                "hidden sm:block text-sm font-medium",
+                index === currentStepIndex ? "text-foreground" : "text-muted-foreground"
+              )}
+            >
+              {step.title}
+            </div>
+            {index < steps.length - 1 && (
+              <div className="hidden sm:block mx-4 h-px w-8 bg-border" />
+            )}
+          </div>
+        ))}
       </div>
-      
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600">
-            Welcome back, {user?.name || "User"}
-          </p>
+
+      {validationError && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{validationError}</AlertDescription>
+        </Alert>
+      )}
+
+      <div className="pmix-card mb-6">
+        <h3 className="text-lg font-semibold text-primary mb-1">
+          {currentStep.title}
+        </h3>
+        <p className="text-sm text-muted-foreground mb-4">
+          {currentStep.description}
+        </p>
+        <div className="py-2">
+          {renderStepContent()}
         </div>
-        <Button asChild>
-          <Link to="/quotes/new">
-            <Plus className="mr-2" size={18} />
-            New Quote
-          </Link>
+      </div>
+
+      <div className="flex justify-between mt-4">
+        <Button
+          variant="outline"
+          onClick={handleBack}
+          disabled={isFirstStep || isSubmitting}
+        >
+          Back
+        </Button>
+        <Button onClick={handleNext} disabled={isSubmitting}>
+          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isLastStep ? "Complete" : "Next"}
         </Button>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Active Quotes
-            </CardTitle>
-            <CardDescription className="text-2xl font-bold">
-              {quoteCount}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground">
-              {isLoading ? "Loading..." : `Total quotes in the system`}
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Machinery
-            </CardTitle>
-            <CardDescription className="text-2xl font-bold">
-              {machineCount}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground">
-              {isLoading ? "Loading..." : `Machines registered in the catalog`}
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Monthly Revenue
-            </CardTitle>
-            <CardDescription className="text-2xl font-bold">
-              ${monthlyRevenue.toLocaleString()}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground">
-              {isLoading ? "Loading..." : `Based on approved quotes`}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Quotes</CardTitle>
-          <CardDescription>
-            Your most recent quote activities
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center items-center h-32">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-            </div>
-          ) : recentQuotes.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground mb-4">No quotes yet</p>
-              <Button asChild>
-                <Link to="/quotes/new">
-                  <Plus className="mr-2" size={18} />
-                  Create Your First Quote
-                </Link>
-              </Button>
-            </div>
-          ) : (
-            <DataTable columns={quoteColumns} data={recentQuotes} />
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 };
 
-export default DashboardPage;
+export default StepWizard;

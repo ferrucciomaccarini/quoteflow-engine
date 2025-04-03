@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -94,7 +93,6 @@ const QuoteDetailView = () => {
     );
   }
 
-  // Extract data from the quote
   const { customer_name, machine_name, total_fee, created_at, status, quote_data } = quote;
   const quoteDate = new Date(created_at).toLocaleDateString();
   const quoteDetails = quote_data || {};
@@ -112,7 +110,7 @@ const QuoteDetailView = () => {
           </div>
           <h1 className="text-3xl font-bold mt-4">Quote Details</h1>
           <p className="text-muted-foreground">
-            Quote #{id} created on {quoteDate}
+            Quote created on {quoteDate}
           </p>
         </div>
       </div>
@@ -133,6 +131,12 @@ const QuoteDetailView = () => {
                 <dd>{customer_name}</dd>
                 <dt className="text-muted-foreground">Contact Person:</dt>
                 <dd>{quoteDetails.contactPerson || "N/A"}</dd>
+                <dt className="text-muted-foreground">Annual Usage:</dt>
+                <dd>{quoteDetails.intensityHours || 0} hours/year</dd>
+                <dt className="text-muted-foreground">Daily Shifts:</dt>
+                <dd>{quoteDetails.dailyShifts || 1}</dd>
+                <dt className="text-muted-foreground">Setup Time:</dt>
+                <dd>{quoteDetails.setupTime || 0} hours</dd>
               </dl>
             </div>
             <div>
@@ -167,12 +171,12 @@ const QuoteDetailView = () => {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Contract Duration</p>
-                      <p className="text-xl font-medium">{quoteDetails.contractDuration || 36} months</p>
+                      <p className="text-xl font-medium">{quoteDetails.timeHorizon || quoteDetails.contractDuration || 36} months</p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Contract Total</p>
                       <p className="text-xl font-medium">
-                        ${((quoteDetails.totalFee || total_fee || 0) * (quoteDetails.contractDuration || 36))
+                        ${((quoteDetails.totalFee || total_fee || 0) * (quoteDetails.timeHorizon || quoteDetails.contractDuration || 36))
                             .toLocaleString(undefined, {maximumFractionDigits: 2})}
                       </p>
                     </div>
@@ -198,10 +202,32 @@ const QuoteDetailView = () => {
                     <CardTitle>Services</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {quoteDetails.selectedServiceIds?.length ? (
+                    {quoteDetails.selectedServices?.length ? (
                       <>
-                        <p className="font-medium">{quoteDetails.selectedServiceIds.length} service(s) selected</p>
-                        <p className="text-sm text-muted-foreground mt-1">
+                        <p className="font-medium">{quoteDetails.selectedServices.length} service(s) selected</p>
+                        <div className="mt-2 max-h-[200px] overflow-y-auto border rounded-md">
+                          <table className="w-full text-sm">
+                            <thead className="bg-muted/50 sticky top-0">
+                              <tr className="border-b">
+                                <th className="text-left p-2">Service</th>
+                                <th className="text-right p-2">Cost</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {quoteDetails.selectedServices.map((service: any) => (
+                                <tr key={service.id} className="border-b">
+                                  <td className="p-2">{service.name}</td>
+                                  <td className="text-right p-2">
+                                    ${service.totalCost?.toFixed(2) || 
+                                      ((service.parts_cost || 0) + (service.labor_cost || 0) + 
+                                      (service.consumables_cost || 0)).toFixed(2)}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-2">
                           Value: ${quoteDetails.servicesPresentValue?.toLocaleString(undefined, {maximumFractionDigits: 2}) || "0"}
                         </p>
                       </>
@@ -211,6 +237,28 @@ const QuoteDetailView = () => {
                   </CardContent>
                 </Card>
               </div>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle>Usage Information</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Annual Usage Intensity</p>
+                      <p className="font-medium">{quoteDetails.intensityHours || 0} hours/year</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Daily Work Shifts</p>
+                      <p className="font-medium">{quoteDetails.dailyShifts || 1} shift(s)</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Average Setup Time</p>
+                      <p className="font-medium">{quoteDetails.setupTime || 0} hours</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
             
             <TabsContent value="financial" className="pt-4">
@@ -257,7 +305,7 @@ const QuoteDetailView = () => {
                   <CardTitle>Risk Assessment</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {quoteDetails.riskVariables ? (
+                  {quoteDetails.riskData?.riskVariables ? (
                     <div className="space-y-4">
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
@@ -272,7 +320,7 @@ const QuoteDetailView = () => {
                             </tr>
                           </thead>
                           <tbody>
-                            {quoteDetails.riskVariables.map((risk: any, index: number) => (
+                            {quoteDetails.riskData.riskVariables.map((risk: any, index: number) => (
                               <tr key={risk.id || index} className="border-b">
                                 <td className="p-2">{risk.domain}</td>
                                 <td className="p-2">{risk.variable}</td>

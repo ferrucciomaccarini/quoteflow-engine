@@ -20,7 +20,7 @@ const RiskAssessmentStep: React.FC<StepComponentProps> = ({ data, updateData }) 
     const domains = ["Finance", "Usage", "Strategy", "Reputation"];
     const variableNames: {[key: string]: string[]} = {
       Finance: ["Installment Paid/Unpaid", "Forecasted Margin", "Final User Scoring Notch", "Final User Negative Act & Pledges"],
-      Usage: ["Covenants", "Machinery Performance", "Maintenance Roadmap", "Installment Paid/Unpaid"],
+      Usage: ["Covenants", "Machinery Performance", "Maintenance Roadmap", "Expected Downtime"],
       Strategy: ["CRM Planned Interactions", "Curves Convergence/Divergence", "Substitution Cost", "Mark-to-Market Reusable Materials"],
       Reputation: ["Final User Survey", "Maintainer Survey", "Carbon Footprint", "Power Consumption"]
     };

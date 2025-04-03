@@ -9,7 +9,7 @@ import { StepComponentProps } from "./types";
 const SummaryStep: React.FC<StepComponentProps> = ({ data, updateData }) => {
   React.useEffect(() => {
     const totalResidualRisk = data.totalResidualRisk || 0;
-    const contractDuration = data.contractDuration || 36;
+    const contractDuration = data.timeHorizon || data.contractDuration || 36;
     const totalRate = data.totalRate || 5;
     
     const riskFee = calculatePeriodicFee(
@@ -22,9 +22,10 @@ const SummaryStep: React.FC<StepComponentProps> = ({ data, updateData }) => {
     
     updateData({
       riskFee,
-      totalFee
+      totalFee,
+      contractDuration
     });
-  }, [data.totalResidualRisk, data.contractDuration, data.totalRate, data.equipmentFee, data.servicesFee, updateData]);
+  }, [data.totalResidualRisk, data.timeHorizon, data.contractDuration, data.totalRate, data.equipmentFee, data.servicesFee, updateData]);
 
   return (
     <div className="space-y-6">
@@ -128,9 +129,31 @@ const EquipmentTab: React.FC<{ data: any }> = ({ data }) => (
       
       <div>
         <Label className="text-muted-foreground">Selected Services</Label>
-        {data.selectedServiceIds && data.selectedServiceIds.length > 0 ? (
-          <div className="mt-2 space-y-2">
-            <p className="font-medium">{data.selectedServiceIds.length} service(s) selected</p>
+        {data.selectedServices && data.selectedServices.length > 0 ? (
+          <div className="mt-2 space-y-4">
+            <p className="font-medium">{data.selectedServices.length} service(s) selected</p>
+            <div className="border rounded-md overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="text-left p-2">Service Name</th>
+                    <th className="text-left p-2">Category</th>
+                    <th className="text-right p-2">Total Cost</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.selectedServices.map((service: any) => (
+                    <tr key={service.id} className="border-b">
+                      <td className="p-2">{service.name}</td>
+                      <td className="p-2">{service.category}</td>
+                      <td className="p-2 text-right">${service.totalCost?.toFixed(2) || 
+                        ((service.parts_cost || 0) + (service.labor_cost || 0) + 
+                        (service.consumables_cost || 0)).toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
             <p className="text-sm">
               Services Present Value: ${data.servicesPresentValue?.toLocaleString(undefined, {maximumFractionDigits: 2}) || "0.00"}
             </p>
@@ -159,7 +182,7 @@ const FinancialTab: React.FC<{ data: any }> = ({ data }) => (
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label className="text-muted-foreground">Contract Duration</Label>
-          <p className="font-medium">{data.contractDuration || 36} months</p>
+          <p className="font-medium">{data.timeHorizon || data.contractDuration || 36} months</p>
         </div>
         <div>
           <Label className="text-muted-foreground">Base Interest Rate</Label>
@@ -191,6 +214,23 @@ const FinancialTab: React.FC<{ data: any }> = ({ data }) => (
         <div className="flex justify-between">
           <span>Total Actualized Residual Risk:</span>
           <span className="font-semibold">${data.totalResidualRisk?.toLocaleString(undefined, {maximumFractionDigits: 2}) || "0.00"}</span>
+        </div>
+      </div>
+      
+      <div className="p-3 border rounded-md bg-muted/50">
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <Label className="text-sm text-muted-foreground">Annual Usage Intensity</Label>
+            <p className="font-medium">{data.intensityHours || 0} hours/year</p>
+          </div>
+          <div>
+            <Label className="text-sm text-muted-foreground">Daily Work Shifts</Label>
+            <p className="font-medium">{data.dailyShifts || 1} shift(s)</p>
+          </div>
+          <div>
+            <Label className="text-sm text-muted-foreground">Average Setup Time</Label>
+            <p className="font-medium">{data.setupTime || 0} hours</p>
+          </div>
         </div>
       </div>
     </CardContent>
@@ -227,9 +267,9 @@ const FeeStructureTab: React.FC<{ data: any }> = ({ data }) => (
       
       <div className="p-4 border rounded-md bg-muted/50">
         <Label className="text-muted-foreground">Contract Total</Label>
-        <p className="font-medium text-xl">${(data.totalFee * (data.contractDuration || 36)).toLocaleString(undefined, {maximumFractionDigits: 2}) || "0.00"}</p>
+        <p className="font-medium text-xl">${(data.totalFee * (data.timeHorizon || data.contractDuration || 36)).toLocaleString(undefined, {maximumFractionDigits: 2}) || "0.00"}</p>
         <p className="text-sm text-muted-foreground mt-1">
-          For the entire {data.contractDuration || 36} month contract
+          For the entire {data.timeHorizon || data.contractDuration || 36} month contract
         </p>
       </div>
     </CardContent>

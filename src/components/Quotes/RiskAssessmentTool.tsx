@@ -268,7 +268,7 @@ const RiskAssessmentTool = () => {
       { 
         id: "U4", 
         domain: "Usage", 
-        variable: "Installment Paid/Unpaid", 
+        variable: "Expected Downtime", 
         frequency: 15, 
         maxLoss: maxLoss * 0.03, 
         maxLossPercentage: 3,
