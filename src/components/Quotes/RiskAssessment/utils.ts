@@ -1,5 +1,4 @@
-
-import { RiskVariable, RiskData } from './types';
+import { RiskVariable, RiskData, Machine } from './types';
 import { calculateResidualRisk, calculateMaxLoss } from '@/utils/calculations';
 
 export const getDefaultRiskVariables = (acquisitionValue: number, avPercentage: number): RiskVariable[] => {
@@ -234,22 +233,17 @@ export const updateRiskData = (prev: RiskData, newData: Partial<RiskData>, selec
   return updated;
 };
 
-// Imported from @/utils/calculations.ts, adding here for better cohesion
 const calculateActualizedTotalRisk = (
   risksByDomain: { [key: string]: number[] },
   annualDiscountRate: number,
   contractYears: number
 ): number => {
-  // Annual discount rate to periodic rate (divide by 12 for monthly)
   const yearlyRate = annualDiscountRate / 100;
   
-  // Get all individual risk values into one array
   const allRisks = Object.values(risksByDomain).flat();
   
-  // Calculate the present value of each risk for each year
   let totalRisk = 0;
   
-  // For each risk, calculate its present value for each year of the contract
   allRisks.forEach(risk => {
     for (let year = 1; year <= contractYears; year++) {
       const presentValue = risk / Math.pow(1 + yearlyRate, year);
