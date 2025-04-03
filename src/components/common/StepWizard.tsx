@@ -10,7 +10,7 @@ interface Step {
   id: string;
   title: string;
   description: string;
-  content: ReactNode;
+  content: ReactNode | ((props: any) => ReactNode);
   validate?: (data: any) => string | null;
 }
 
@@ -83,6 +83,17 @@ const StepWizard = ({
     setValidationError(null);
   };
 
+  const renderStepContent = () => {
+    const { content } = currentStep;
+    const props = { data, updateData };
+    
+    if (typeof content === 'function') {
+      return content(props);
+    }
+    
+    return content;
+  };
+
   return (
     <div className={cn("flex flex-col", className)}>
       <div className="flex mb-6 overflow-x-auto">
@@ -144,12 +155,7 @@ const StepWizard = ({
           {currentStep.description}
         </p>
         <div className="py-2">
-          {React.isValidElement(currentStep.content)
-            ? React.cloneElement(currentStep.content as React.ReactElement, {
-                data,
-                updateData,
-              })
-            : currentStep.content}
+          {renderStepContent()}
         </div>
       </div>
 

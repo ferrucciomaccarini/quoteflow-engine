@@ -112,42 +112,42 @@ const QuoteCreation = () => {
       id: "customer-needs",
       title: "Customer Needs",
       description: "Define the customer's business requirements",
-      content: <CustomerNeedsStep />,
+      content: (props: any) => <CustomerNeedsStep {...props} />,
       validate: validateCustomerNeeds
     },
     {
       id: "equipment-selection",
       title: "Equipment Selection",
       description: "Select the appropriate machinery",
-      content: <EquipmentSelectionStep />,
+      content: (props: any) => <EquipmentSelectionStep {...props} />,
       validate: validateEquipmentSelection
     },
     {
       id: "service-selection",
       title: "Service Selection",
       description: "Select the services to include",
-      content: <ServiceSelectionStep />,
+      content: (props: any) => <ServiceSelectionStep {...props} />,
       validate: validateServiceSelection
     },
     {
       id: "financial-parameters",
       title: "Financial Parameters",
       description: "Define the financial parameters of the contract",
-      content: <FinancialParametersStep />,
+      content: (props: any) => <FinancialParametersStep {...props} />,
       validate: validateFinancialParameters
     },
     {
       id: "risk-assessment",
       title: "Risk Assessment",
       description: "Evaluate risks according to Paradigmix methodology",
-      content: <RiskAssessmentStep />,
+      content: (props: any) => <RiskAssessmentStep {...props} />,
       validate: validateRiskAssessment
     },
     {
       id: "summary",
       title: "Summary",
       description: "Review the final EaaS fee structure",
-      content: <SummaryStep />
+      content: (props: any) => <SummaryStep {...props} />
     }
   ];
 

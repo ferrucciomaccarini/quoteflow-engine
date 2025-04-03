@@ -87,6 +87,33 @@ export type Database = {
         }
         Relationships: []
       }
+      EURIRS: {
+        Row: {
+          Apertura: string | null
+          Data: string | null
+          Massimo: string | null
+          Minimo: string | null
+          Ultimo: string | null
+          "Var. %": string | null
+        }
+        Insert: {
+          Apertura?: string | null
+          Data?: string | null
+          Massimo?: string | null
+          Minimo?: string | null
+          Ultimo?: string | null
+          "Var. %"?: string | null
+        }
+        Update: {
+          Apertura?: string | null
+          Data?: string | null
+          Massimo?: string | null
+          Minimo?: string | null
+          Ultimo?: string | null
+          "Var. %"?: string | null
+        }
+        Relationships: []
+      }
       internal_rating_spreads: {
         Row: {
           created_at: string
