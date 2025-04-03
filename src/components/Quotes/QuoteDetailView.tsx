@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -210,20 +211,29 @@ const QuoteDetailView = () => {
                             <thead className="bg-muted/50 sticky top-0">
                               <tr className="border-b">
                                 <th className="text-left p-2">Service</th>
-                                <th className="text-right p-2">Cost</th>
+                                <th className="text-right p-2">Parts</th>
+                                <th className="text-right p-2">Labor</th>
+                                <th className="text-right p-2">Consumables</th>
+                                <th className="text-right p-2">Total Cost</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {quoteDetails.selectedServices.map((service: any) => (
-                                <tr key={service.id} className="border-b">
-                                  <td className="p-2">{service.name}</td>
-                                  <td className="text-right p-2">
-                                    ${service.totalCost?.toFixed(2) || 
-                                      ((service.parts_cost || 0) + (service.labor_cost || 0) + 
-                                      (service.consumables_cost || 0)).toFixed(2)}
-                                  </td>
-                                </tr>
-                              ))}
+                              {quoteDetails.selectedServices.map((service: any) => {
+                                const partsCost = service.parts_cost || 0;
+                                const laborCost = service.labor_cost || 0;
+                                const consumablesCost = service.consumables_cost || 0;
+                                const totalCost = service.totalCost || partsCost + laborCost + consumablesCost;
+                                
+                                return (
+                                  <tr key={service.id} className="border-b">
+                                    <td className="p-2">{service.name}</td>
+                                    <td className="text-right p-2">${partsCost.toFixed(2)}</td>
+                                    <td className="text-right p-2">${laborCost.toFixed(2)}</td>
+                                    <td className="text-right p-2">${consumablesCost.toFixed(2)}</td>
+                                    <td className="text-right p-2 font-medium">${totalCost.toFixed(2)}</td>
+                                  </tr>
+                                );
+                              })}
                             </tbody>
                           </table>
                         </div>

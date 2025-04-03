@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -138,19 +137,30 @@ const EquipmentTab: React.FC<{ data: any }> = ({ data }) => (
                   <tr className="border-b bg-muted/50">
                     <th className="text-left p-2">Service Name</th>
                     <th className="text-left p-2">Category</th>
+                    <th className="text-right p-2">Parts</th>
+                    <th className="text-right p-2">Labor</th>
+                    <th className="text-right p-2">Consumables</th>
                     <th className="text-right p-2">Total Cost</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {data.selectedServices.map((service: any) => (
-                    <tr key={service.id} className="border-b">
-                      <td className="p-2">{service.name}</td>
-                      <td className="p-2">{service.category}</td>
-                      <td className="p-2 text-right">${service.totalCost?.toFixed(2) || 
-                        ((service.parts_cost || 0) + (service.labor_cost || 0) + 
-                        (service.consumables_cost || 0)).toFixed(2)}</td>
-                    </tr>
-                  ))}
+                  {data.selectedServices.map((service: any) => {
+                    const partsCost = service.parts_cost || 0;
+                    const laborCost = service.labor_cost || 0;
+                    const consumablesCost = service.consumables_cost || 0;
+                    const totalCost = service.totalCost || partsCost + laborCost + consumablesCost;
+                    
+                    return (
+                      <tr key={service.id} className="border-b">
+                        <td className="p-2">{service.name}</td>
+                        <td className="p-2">{service.category}</td>
+                        <td className="p-2 text-right">${partsCost.toFixed(2)}</td>
+                        <td className="p-2 text-right">${laborCost.toFixed(2)}</td>
+                        <td className="p-2 text-right">${consumablesCost.toFixed(2)}</td>
+                        <td className="p-2 text-right font-medium">${totalCost.toFixed(2)}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
