@@ -1,33 +1,11 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { calculateResidualRisk } from "@/utils/calculations";
-
-interface RiskVariable {
-  id: string;
-  domain: "Finance" | "Usage" | "Strategy" | "Reputation";
-  variable: string;
-  frequency: number; // 0-100%
-  maxLossPercentage: number; // 0-100% of acquisition value
-  maxLoss: number; // dollar amount
-  mitigation: number; // 0-100%
-  residualRisk: number; // calculated
-}
-
-interface RiskData {
-  riskVariables: RiskVariable[];
-  avPercentage: number;
-  annualDiscountRate: number;
-  contractYears: number;
-  totalActualizedRisk: number;
-  machineId: string;
-  acquisitionValue?: number;
-  [key: string]: any;
-}
+import { RiskData, RiskVariable } from "./RiskAssessment/types";
 
 interface RiskAssessmentProps {
   data: RiskData;
