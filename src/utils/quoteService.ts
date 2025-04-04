@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { AmortizationEntry } from "@/utils/calculations";
 import { QuoteCalculation } from "@/types/database";
+import { Json } from "@/integrations/supabase/types";
 
 interface QuoteData {
   customerName: string;
@@ -91,12 +92,12 @@ export const saveQuoteCalculations = async (calculationData: QuoteCalculationDat
     
     console.log("Saving quote calculations with present value:", calculationData.present_value);
     
-    // Use type assertion to handle the newly created table
-    // We need to manually specify the types since the auto-generated types don't include our new table yet
+    // Based on the Supabase schema, user_id is not defined in the quote_calculations table type
+    // We need to explicitly type cast the data to match the database structure
     const { data, error } = await supabase
       .from('quote_calculations')
       .insert({
-        user_id: userId,
+        // Don't include user_id as it's not in the database schema type
         quote_id: calculationData.quote_id,
         time_horizon: calculationData.time_horizon,
         annual_usage_hours: calculationData.annual_usage_hours,
@@ -113,10 +114,13 @@ export const saveQuoteCalculations = async (calculationData: QuoteCalculationDat
         year_10_costs: yearCosts[9] || 0,
         discount_rate: calculationData.discount_rate,
         present_value: calculationData.present_value,
-        equipment_amortization: calculationData.equipment_amortization,
-        services_amortization: calculationData.services_amortization,
-        risk_amortization: calculationData.risk_amortization
-      })
+        equipment_amortization: calculationData.equipment_amortization as unknown as Json,
+        services_amortization: calculationData.services_amortization as unknown as Json,
+        risk_amortization: calculationData.risk_amortization as unknown as Json,
+        // We need to add user_id here since the database needs it
+        // but TypeScript doesn't recognize it in the type
+        user_id: userId
+      } as any)  // Use 'as any' to bypass strict type checking
       .select();
     
     if (error) {
