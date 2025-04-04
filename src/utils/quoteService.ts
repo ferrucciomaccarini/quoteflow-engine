@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { AmortizationEntry } from "@/utils/calculations";
+import { QuoteCalculation } from "@/types/database";
 
 interface QuoteData {
   customerName: string;
@@ -90,33 +91,32 @@ export const saveQuoteCalculations = async (calculationData: QuoteCalculationDat
     
     console.log("Saving quote calculations with present value:", calculationData.present_value);
     
-    // Save the calculations to the database
+    // Use type assertion to handle the newly created table
+    // We need to manually specify the types since the auto-generated types don't include our new table yet
     const { data, error } = await supabase
       .from('quote_calculations')
-      .insert([
-        {
-          user_id: userId,
-          quote_id: calculationData.quote_id,
-          time_horizon: calculationData.time_horizon,
-          annual_usage_hours: calculationData.annual_usage_hours,
-          daily_shifts: calculationData.daily_shifts,
-          year_1_costs: yearCosts[0] || 0,
-          year_2_costs: yearCosts[1] || 0,
-          year_3_costs: yearCosts[2] || 0,
-          year_4_costs: yearCosts[3] || 0,
-          year_5_costs: yearCosts[4] || 0,
-          year_6_costs: yearCosts[5] || 0,
-          year_7_costs: yearCosts[6] || 0,
-          year_8_costs: yearCosts[7] || 0,
-          year_9_costs: yearCosts[8] || 0,
-          year_10_costs: yearCosts[9] || 0,
-          discount_rate: calculationData.discount_rate,
-          present_value: calculationData.present_value,
-          equipment_amortization: calculationData.equipment_amortization,
-          services_amortization: calculationData.services_amortization,
-          risk_amortization: calculationData.risk_amortization
-        }
-      ])
+      .insert({
+        user_id: userId,
+        quote_id: calculationData.quote_id,
+        time_horizon: calculationData.time_horizon,
+        annual_usage_hours: calculationData.annual_usage_hours,
+        daily_shifts: calculationData.daily_shifts,
+        year_1_costs: yearCosts[0] || 0,
+        year_2_costs: yearCosts[1] || 0,
+        year_3_costs: yearCosts[2] || 0,
+        year_4_costs: yearCosts[3] || 0,
+        year_5_costs: yearCosts[4] || 0,
+        year_6_costs: yearCosts[5] || 0,
+        year_7_costs: yearCosts[6] || 0,
+        year_8_costs: yearCosts[7] || 0,
+        year_9_costs: yearCosts[8] || 0,
+        year_10_costs: yearCosts[9] || 0,
+        discount_rate: calculationData.discount_rate,
+        present_value: calculationData.present_value,
+        equipment_amortization: calculationData.equipment_amortization,
+        services_amortization: calculationData.services_amortization,
+        risk_amortization: calculationData.risk_amortization
+      })
       .select();
     
     if (error) {
