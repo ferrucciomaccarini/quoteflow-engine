@@ -13,10 +13,7 @@ import {
   QuoteStatusBadge, 
   QuoteDetailsCard,
   LoadingState, 
-  NotFoundState,
-  SummaryTabContent,
-  FinancialTabContent,
-  RisksTabContent
+  NotFoundState
 } from "./components";
 
 const QuoteDetailView = () => {
@@ -47,12 +44,13 @@ const QuoteDetailView = () => {
           // Fetch the quote calculations as well
           const calculationsData = await fetchQuoteCalculations(id);
           
-          // Merge the calculations data into the quote object if available
+          // Create a deep copy of quote_data to modify it, ensuring it's an object
+          const quoteData = data.quote_data && typeof data.quote_data === 'object' 
+            ? { ...data.quote_data } 
+            : {};
+          
+          // Add the amortization data if calculations exist
           if (calculationsData) {
-            // Create a deep copy of quote_data to modify it
-            const quoteData = data.quote_data ? { ...data.quote_data } : {};
-            
-            // Add the amortization data
             if (calculationsData.equipment_amortization) {
               quoteData.equipmentAmortization = calculationsData.equipment_amortization;
             }
@@ -62,10 +60,10 @@ const QuoteDetailView = () => {
             if (calculationsData.risk_amortization) {
               quoteData.riskAmortization = calculationsData.risk_amortization;
             }
-            
-            // Update the quote data
-            data.quote_data = quoteData;
           }
+          
+          // Update the quote data
+          data.quote_data = quoteData;
           
           setQuote(data);
         } else {
