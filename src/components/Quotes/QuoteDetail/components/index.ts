@@ -7,3 +7,4 @@ export { default as NotFoundState } from './NotFoundState';
 export { default as SummaryTabContent } from './SummaryTabContent';
 export { default as FinancialTabContent } from './FinancialTabContent';
 export { default as RisksTabContent } from './RisksTabContent';
+export { default as CalculationsTabContent } from './CalculationsTabContent';

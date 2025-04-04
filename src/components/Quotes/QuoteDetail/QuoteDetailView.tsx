@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, FileText } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { fetchQuoteCalculations } from "@/utils/quoteService";
 import { 
   QuoteHeader, 
   QuoteStatusBadge, 
@@ -28,10 +29,11 @@ const QuoteDetailView = () => {
 
   useEffect(() => {
     const fetchQuote = async () => {
-      if (!user) return;
+      if (!user || !id) return;
       
       try {
         setLoading(true);
+        // Fetch the quote details
         const { data, error } = await supabase
           .from('quotes')
           .select('*')
@@ -42,6 +44,29 @@ const QuoteDetailView = () => {
         if (error) throw error;
         
         if (data) {
+          // Fetch the quote calculations as well
+          const calculationsData = await fetchQuoteCalculations(id);
+          
+          // Merge the calculations data into the quote object if available
+          if (calculationsData) {
+            // Create a deep copy of quote_data to modify it
+            const quoteData = data.quote_data ? { ...data.quote_data } : {};
+            
+            // Add the amortization data
+            if (calculationsData.equipment_amortization) {
+              quoteData.equipmentAmortization = calculationsData.equipment_amortization;
+            }
+            if (calculationsData.services_amortization) {
+              quoteData.servicesAmortization = calculationsData.services_amortization;
+            }
+            if (calculationsData.risk_amortization) {
+              quoteData.riskAmortization = calculationsData.risk_amortization;
+            }
+            
+            // Update the quote data
+            data.quote_data = quoteData;
+          }
+          
           setQuote(data);
         } else {
           toast({

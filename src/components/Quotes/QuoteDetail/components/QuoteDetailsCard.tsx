@@ -6,7 +6,7 @@ import { ArrowLeft, CheckCircle2, XCircle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { NavigateFunction } from "react-router-dom";
-import { SummaryTabContent, FinancialTabContent, RisksTabContent } from "./";
+import { SummaryTabContent, FinancialTabContent, RisksTabContent, CalculationsTabContent } from "./";
 
 interface QuoteDetailsCardProps {
   quote: any;
@@ -55,10 +55,11 @@ const QuoteDetailsCard = ({ quote, navigate }: QuoteDetailsCardProps) => {
         <Separator className="my-6" />
         
         <Tabs defaultValue="summary">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="summary">Summary</TabsTrigger>
             <TabsTrigger value="financial">Financial Details</TabsTrigger>
             <TabsTrigger value="risks">Risk Assessment</TabsTrigger>
+            <TabsTrigger value="calculations">Calculations</TabsTrigger>
           </TabsList>
           <TabsContent value="summary" className="space-y-4 pt-4">
             <SummaryTabContent quote={quote} />
@@ -70,6 +71,10 @@ const QuoteDetailsCard = ({ quote, navigate }: QuoteDetailsCardProps) => {
           
           <TabsContent value="risks" className="pt-4">
             <RisksTabContent quote={quote} />
+          </TabsContent>
+
+          <TabsContent value="calculations" className="pt-4">
+            <CalculationsTabContent quote={quote} />
           </TabsContent>
         </Tabs>
       </CardContent>

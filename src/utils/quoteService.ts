@@ -134,3 +134,24 @@ export const saveQuoteCalculations = async (calculationData: QuoteCalculationDat
     throw error;
   }
 };
+
+// Add new function to fetch quote calculations
+export const fetchQuoteCalculations = async (quoteId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('quote_calculations')
+      .select('*')
+      .eq('quote_id', quoteId)
+      .single();
+    
+    if (error) {
+      console.error("Error fetching quote calculations:", error);
+      return null;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error("Error in fetchQuoteCalculations:", error);
+    return null;
+  }
+};
