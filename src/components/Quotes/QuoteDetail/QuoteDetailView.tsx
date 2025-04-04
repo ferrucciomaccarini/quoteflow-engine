@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, FileText } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { fetchQuoteCalculations } from "@/utils/quoteService";
+import { Json } from "@/integrations/supabase/types";
 import { 
   QuoteHeader, 
   QuoteStatusBadge, 
@@ -15,6 +16,14 @@ import {
   LoadingState, 
   NotFoundState
 } from "./components";
+
+// Define interface for quote data
+interface QuoteData {
+  [key: string]: any;
+  equipmentAmortization?: any[];
+  servicesAmortization?: any[];
+  riskAmortization?: any[];
+}
 
 const QuoteDetailView = () => {
   const { id } = useParams();
@@ -45,9 +54,10 @@ const QuoteDetailView = () => {
           const calculationsData = await fetchQuoteCalculations(id);
           
           // Create a deep copy of quote_data to modify it, ensuring it's an object
-          const quoteData = data.quote_data && typeof data.quote_data === 'object' 
-            ? { ...data.quote_data } 
-            : {};
+          const quoteData: QuoteData = 
+            (data.quote_data && typeof data.quote_data === 'object')
+              ? { ...(data.quote_data as Record<string, any>) } 
+              : {};
           
           // Add the amortization data if calculations exist
           if (calculationsData) {
