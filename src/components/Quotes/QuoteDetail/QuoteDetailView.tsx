@@ -61,14 +61,22 @@ const QuoteDetailView = () => {
           
           // Add the amortization data if calculations exist
           if (calculationsData) {
-            if (calculationsData.equipment_amortization) {
-              quoteData.equipmentAmortization = calculationsData.equipment_amortization;
+            // Check if equipment_amortization exists and is an array before assigning
+            if (calculationsData.equipment_amortization && 
+                Array.isArray(calculationsData.equipment_amortization)) {
+              quoteData.equipmentAmortization = calculationsData.equipment_amortization as any[];
             }
-            if (calculationsData.services_amortization) {
-              quoteData.servicesAmortization = calculationsData.services_amortization;
+            
+            // Check if services_amortization exists and is an array before assigning
+            if (calculationsData.services_amortization && 
+                Array.isArray(calculationsData.services_amortization)) {
+              quoteData.servicesAmortization = calculationsData.services_amortization as any[];
             }
-            if (calculationsData.risk_amortization) {
-              quoteData.riskAmortization = calculationsData.risk_amortization;
+            
+            // Check if risk_amortization exists and is an array before assigning
+            if (calculationsData.risk_amortization && 
+                Array.isArray(calculationsData.risk_amortization)) {
+              quoteData.riskAmortization = calculationsData.risk_amortization as any[];
             }
           }
           
