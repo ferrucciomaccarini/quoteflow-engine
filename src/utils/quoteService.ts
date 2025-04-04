@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { AmortizationEntry } from "@/utils/calculations";
 
 interface QuoteData {
   customerName: string;
@@ -8,10 +9,23 @@ interface QuoteData {
   machineValue: number;
   timeHorizon: number;
   contractDuration: number;
-  totalFee: number; // Ensuring this field is defined
+  totalFee: number;
   servicesPresentValue?: number;
   status: "Draft" | "Pending" | "Approved" | "Rejected";
   [key: string]: any; // For additional properties
+}
+
+interface QuoteCalculationData {
+  quote_id: string;
+  time_horizon: number;
+  annual_usage_hours: number;
+  daily_shifts: number;
+  yearCosts: number[];
+  discount_rate: number;
+  present_value: number;
+  equipment_amortization: AmortizationEntry[];
+  services_amortization: AmortizationEntry[];
+  risk_amortization: AmortizationEntry[];
 }
 
 export const saveQuote = async (quoteData: QuoteData) => {
@@ -57,6 +71,62 @@ export const saveQuote = async (quoteData: QuoteData) => {
     return data;
   } catch (error) {
     console.error("Error in saveQuote:", error);
+    throw error;
+  }
+};
+
+export const saveQuoteCalculations = async (calculationData: QuoteCalculationData) => {
+  try {
+    // Get the current user's session
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      throw new Error("User not authenticated");
+    }
+    
+    const userId = sessionData.session.user.id;
+    
+    // Convert year costs array to specific fields
+    const yearCosts = calculationData.yearCosts || Array(10).fill(0);
+    
+    console.log("Saving quote calculations with present value:", calculationData.present_value);
+    
+    // Save the calculations to the database
+    const { data, error } = await supabase
+      .from('quote_calculations')
+      .insert([
+        {
+          user_id: userId,
+          quote_id: calculationData.quote_id,
+          time_horizon: calculationData.time_horizon,
+          annual_usage_hours: calculationData.annual_usage_hours,
+          daily_shifts: calculationData.daily_shifts,
+          year_1_costs: yearCosts[0] || 0,
+          year_2_costs: yearCosts[1] || 0,
+          year_3_costs: yearCosts[2] || 0,
+          year_4_costs: yearCosts[3] || 0,
+          year_5_costs: yearCosts[4] || 0,
+          year_6_costs: yearCosts[5] || 0,
+          year_7_costs: yearCosts[6] || 0,
+          year_8_costs: yearCosts[7] || 0,
+          year_9_costs: yearCosts[8] || 0,
+          year_10_costs: yearCosts[9] || 0,
+          discount_rate: calculationData.discount_rate,
+          present_value: calculationData.present_value,
+          equipment_amortization: calculationData.equipment_amortization,
+          services_amortization: calculationData.services_amortization,
+          risk_amortization: calculationData.risk_amortization
+        }
+      ])
+      .select();
+    
+    if (error) {
+      console.error("Error saving quote calculations:", error);
+      throw error;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error("Error in saveQuoteCalculations:", error);
     throw error;
   }
 };

@@ -9,6 +9,90 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      AnagClienti: {
+        Row: {
+          address: string | null
+          Codice_SDI: string | null
+          Comune: string | null
+          contact_person: string | null
+          email: string | null
+          Fido: string | null
+          IBAN: string | null
+          ID: number | null
+          Modalità_Pagamento: string | null
+          name: string | null
+          Partita_IVA: string | null
+          PEC: string | null
+          phone: string | null
+          Prov: string | null
+          Rating: string | null
+          "Settore/ATECO": string | null
+          Split_Payment: string | null
+        }
+        Insert: {
+          address?: string | null
+          Codice_SDI?: string | null
+          Comune?: string | null
+          contact_person?: string | null
+          email?: string | null
+          Fido?: string | null
+          IBAN?: string | null
+          ID?: number | null
+          Modalità_Pagamento?: string | null
+          name?: string | null
+          Partita_IVA?: string | null
+          PEC?: string | null
+          phone?: string | null
+          Prov?: string | null
+          Rating?: string | null
+          "Settore/ATECO"?: string | null
+          Split_Payment?: string | null
+        }
+        Update: {
+          address?: string | null
+          Codice_SDI?: string | null
+          Comune?: string | null
+          contact_person?: string | null
+          email?: string | null
+          Fido?: string | null
+          IBAN?: string | null
+          ID?: number | null
+          Modalità_Pagamento?: string | null
+          name?: string | null
+          Partita_IVA?: string | null
+          PEC?: string | null
+          phone?: string | null
+          Prov?: string | null
+          Rating?: string | null
+          "Settore/ATECO"?: string | null
+          Split_Payment?: string | null
+        }
+        Relationships: []
+      }
+      Clientinew: {
+        Row: {
+          address: string | null
+          contact_person: string | null
+          email: string | null
+          name: string | null
+          phone: string | null
+        }
+        Insert: {
+          address?: string | null
+          contact_person?: string | null
+          email?: string | null
+          name?: string | null
+          phone?: string | null
+        }
+        Update: {
+          address?: string | null
+          contact_person?: string | null
+          email?: string | null
+          name?: string | null
+          phone?: string | null
+        }
+        Relationships: []
+      }
       credit_bureau_spreads: {
         Row: {
           bureau_score: number
@@ -218,10 +302,10 @@ export type Database = {
           category_id: string | null
           created_at: string | null
           customer_id: string | null
-          daily_rate: number
+          daily_rate: number | null
           description: string | null
           estimated_useful_life: number | null
-          hourly_rate: number
+          hourly_rate: number | null
           id: string
           name: string
           updated_at: string | null
@@ -234,10 +318,10 @@ export type Database = {
           category_id?: string | null
           created_at?: string | null
           customer_id?: string | null
-          daily_rate?: number
+          daily_rate?: number | null
           description?: string | null
           estimated_useful_life?: number | null
-          hourly_rate?: number
+          hourly_rate?: number | null
           id?: string
           name: string
           updated_at?: string | null
@@ -250,10 +334,10 @@ export type Database = {
           category_id?: string | null
           created_at?: string | null
           customer_id?: string | null
-          daily_rate?: number
+          daily_rate?: number | null
           description?: string | null
           estimated_useful_life?: number | null
-          hourly_rate?: number
+          hourly_rate?: number | null
           id?: string
           name?: string
           updated_at?: string | null
@@ -308,6 +392,92 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      quote_calculations: {
+        Row: {
+          annual_usage_hours: number
+          created_at: string
+          daily_shifts: number
+          discount_rate: number
+          equipment_amortization: Json | null
+          id: string
+          present_value: number
+          quote_id: string | null
+          risk_amortization: Json | null
+          services_amortization: Json | null
+          time_horizon: number
+          updated_at: string
+          user_id: string
+          year_1_costs: number | null
+          year_10_costs: number | null
+          year_2_costs: number | null
+          year_3_costs: number | null
+          year_4_costs: number | null
+          year_5_costs: number | null
+          year_6_costs: number | null
+          year_7_costs: number | null
+          year_8_costs: number | null
+          year_9_costs: number | null
+        }
+        Insert: {
+          annual_usage_hours: number
+          created_at?: string
+          daily_shifts: number
+          discount_rate: number
+          equipment_amortization?: Json | null
+          id?: string
+          present_value: number
+          quote_id?: string | null
+          risk_amortization?: Json | null
+          services_amortization?: Json | null
+          time_horizon: number
+          updated_at?: string
+          user_id: string
+          year_1_costs?: number | null
+          year_10_costs?: number | null
+          year_2_costs?: number | null
+          year_3_costs?: number | null
+          year_4_costs?: number | null
+          year_5_costs?: number | null
+          year_6_costs?: number | null
+          year_7_costs?: number | null
+          year_8_costs?: number | null
+          year_9_costs?: number | null
+        }
+        Update: {
+          annual_usage_hours?: number
+          created_at?: string
+          daily_shifts?: number
+          discount_rate?: number
+          equipment_amortization?: Json | null
+          id?: string
+          present_value?: number
+          quote_id?: string | null
+          risk_amortization?: Json | null
+          services_amortization?: Json | null
+          time_horizon?: number
+          updated_at?: string
+          user_id?: string
+          year_1_costs?: number | null
+          year_10_costs?: number | null
+          year_2_costs?: number | null
+          year_3_costs?: number | null
+          year_4_costs?: number | null
+          year_5_costs?: number | null
+          year_6_costs?: number | null
+          year_7_costs?: number | null
+          year_8_costs?: number | null
+          year_9_costs?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_calculations_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       quotes: {
         Row: {

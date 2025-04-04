@@ -161,3 +161,110 @@ export const calculateResidualValue = (
 ): number => {
   return acquisitionValue * (residualValuePercentage / 100);
 };
+
+// NEW FUNCTIONS: Calculate yearly service costs
+export const calculateYearlyServiceCosts = (
+  serviceEvents: ServiceEvent[],
+  contractYears: number
+): number[] => {
+  const yearlyCosts = Array(10).fill(0); // Initialize with 10 years (max)
+  
+  serviceEvents.forEach(event => {
+    const year = Math.floor((event.month - 1) / 12);
+    if (year < 10) {
+      yearlyCosts[year] += event.cost;
+    }
+  });
+  
+  return yearlyCosts;
+};
+
+// NEW FUNCTION: Calculate detailed amortization schedule for equipment
+export interface AmortizationEntry {
+  month: number;
+  remainingCapital: number;
+  capitalPortion: number;
+  interestPortion: number;
+  fee: number;
+}
+
+export const calculateEquipmentAmortization = (
+  acquisitionValue: number,
+  interestRate: number,
+  periods: number,
+  residualValue: number = 0
+): AmortizationEntry[] => {
+  const amortizationTable: AmortizationEntry[] = [];
+  const periodicRate = interestRate / 100 / 12;
+  const monthlyFee = calculatePeriodicFee(acquisitionValue, interestRate, periods, residualValue);
+  
+  let remainingCapital = acquisitionValue;
+  
+  for (let month = 1; month <= periods; month++) {
+    const interestPortion = remainingCapital * periodicRate;
+    let capitalPortion = monthlyFee - interestPortion;
+    
+    // Adjust for the last period to ensure the final value equals the residual value
+    if (month === periods) {
+      capitalPortion = remainingCapital - residualValue;
+      remainingCapital = residualValue;
+    } else {
+      remainingCapital -= capitalPortion;
+    }
+    
+    amortizationTable.push({
+      month,
+      remainingCapital,
+      capitalPortion,
+      interestPortion,
+      fee: capitalPortion + interestPortion
+    });
+  }
+  
+  return amortizationTable;
+};
+
+// NEW FUNCTION: Calculate detailed amortization schedule for services
+export const calculateServicesAmortization = (
+  servicesPresentValue: number,
+  interestRate: number,
+  periods: number
+): AmortizationEntry[] => {
+  const amortizationTable: AmortizationEntry[] = [];
+  const periodicRate = interestRate / 100 / 12;
+  const monthlyFee = calculatePeriodicFee(servicesPresentValue, interestRate, periods);
+  
+  let remainingCapital = servicesPresentValue;
+  
+  for (let month = 1; month <= periods; month++) {
+    const interestPortion = remainingCapital * periodicRate;
+    let capitalPortion = monthlyFee - interestPortion;
+    
+    // Adjust for the last period to ensure we reach zero
+    if (month === periods) {
+      capitalPortion = remainingCapital;
+      remainingCapital = 0;
+    } else {
+      remainingCapital -= capitalPortion;
+    }
+    
+    amortizationTable.push({
+      month,
+      remainingCapital,
+      capitalPortion,
+      interestPortion,
+      fee: capitalPortion + interestPortion
+    });
+  }
+  
+  return amortizationTable;
+};
+
+// NEW FUNCTION: Calculate detailed amortization schedule for risk
+export const calculateRiskAmortization = (
+  totalRiskValue: number,
+  interestRate: number,
+  periods: number
+): AmortizationEntry[] => {
+  return calculateServicesAmortization(totalRiskValue, interestRate, periods);
+};

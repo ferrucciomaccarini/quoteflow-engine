@@ -1,4 +1,3 @@
-
 import { Database } from "@/integrations/supabase/types";
 import { Json } from "@/integrations/supabase/types";
 
@@ -128,3 +127,37 @@ export type RiskVariable = {
 };
 
 export type RiskAssessmentInsert = Omit<RiskAssessment, 'id' | 'created_at' | 'updated_at'>;
+
+export type QuoteCalculation = {
+  id: string;
+  quote_id: string;
+  user_id: string;
+  time_horizon: number;
+  annual_usage_hours: number;
+  daily_shifts: number;
+  year_1_costs: number;
+  year_2_costs: number;
+  year_3_costs: number;
+  year_4_costs: number;
+  year_5_costs: number;
+  year_6_costs: number;
+  year_7_costs: number;
+  year_8_costs: number;
+  year_9_costs: number;
+  year_10_costs: number;
+  discount_rate: number;
+  present_value: number;
+  equipment_amortization: AmortizationEntry[];
+  services_amortization: AmortizationEntry[];
+  risk_amortization: AmortizationEntry[];
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type AmortizationEntry = {
+  month: number;
+  remainingCapital: number;
+  capitalPortion: number;
+  interestPortion: number;
+  fee: number;
+};

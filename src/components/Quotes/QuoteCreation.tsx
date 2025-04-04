@@ -1,11 +1,10 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import StepWizard from "../common/StepWizard";
 import { useAuth } from "@/context/AuthContext";
-import { saveQuote } from "@/utils/quoteService";
+import { saveQuote, saveQuoteCalculations } from "@/utils/quoteService";
 import {
   CustomerNeedsStep,
   EquipmentSelectionStep,
@@ -14,6 +13,12 @@ import {
   RiskAssessmentStep,
   SummaryStep
 } from "./Steps";
+import { 
+  calculateEquipmentAmortization, 
+  calculateServicesAmortization, 
+  calculateRiskAmortization,
+  calculateYearlyServiceCosts
+} from "@/utils/calculations";
 
 const QuoteCreation = () => {
   const navigate = useNavigate();
@@ -45,7 +50,61 @@ const QuoteCreation = () => {
       
       console.log("Saving quote with data:", quoteData);
       
-      await saveQuote(quoteData);
+      // Save the quote first
+      const savedQuote = await saveQuote(quoteData);
+      
+      if (savedQuote && savedQuote.length > 0) {
+        const quoteId = savedQuote[0].id;
+        
+        // Calculate amortization tables
+        const contractDuration = data.timeHorizon || data.contractDuration || 36;
+        const totalRate = data.totalRate || 5;
+        const machineValue = data.machineValue || 0;
+        const servicesPresentValue = data.servicesPresentValue || 0;
+        const totalResidualRisk = data.totalResidualRisk || 0;
+        const residualValue = data.residualValue || 0;
+        
+        // Calculate detailed amortization schedules
+        const equipmentAmortization = calculateEquipmentAmortization(
+          machineValue, 
+          totalRate, 
+          contractDuration,
+          residualValue
+        );
+        
+        const servicesAmortization = calculateServicesAmortization(
+          servicesPresentValue,
+          totalRate,
+          contractDuration
+        );
+        
+        const riskAmortization = calculateRiskAmortization(
+          totalResidualRisk,
+          totalRate,
+          contractDuration
+        );
+        
+        // Calculate yearly service costs
+        const serviceEvents = data.serviceEvents || [];
+        const yearlyCosts = calculateYearlyServiceCosts(
+          serviceEvents,
+          Math.ceil(contractDuration / 12)
+        );
+        
+        // Save detailed calculations
+        await saveQuoteCalculations({
+          quote_id: quoteId,
+          time_horizon: contractDuration,
+          annual_usage_hours: data.intensityHours || 2000,
+          daily_shifts: data.dailyShifts || 1,
+          yearCosts: yearlyCosts,
+          discount_rate: totalRate,
+          present_value: servicesPresentValue,
+          equipment_amortization: equipmentAmortization,
+          services_amortization: servicesAmortization,
+          risk_amortization: riskAmortization
+        });
+      }
       
       toast({
         title: "Quote Created",
