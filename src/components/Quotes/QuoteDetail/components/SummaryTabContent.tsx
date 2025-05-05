@@ -11,6 +11,17 @@ const SummaryTabContent = ({ quote }: SummaryTabContentProps) => {
   const quoteDetails = quote_data;
   
   const timeHorizon = quoteDetails.timeHorizon || quoteDetails.contractDuration || 36;
+  
+  // Safe formatting function to handle null/undefined values
+  const safeFormat = (value: any) => {
+    return value !== null && value !== undefined 
+      ? value.toLocaleString(undefined, {maximumFractionDigits: 2})
+      : "0.00";
+  };
+
+  // Calculate contract total with null check
+  const monthlyFee = quoteDetails.totalFee || total_fee || 0;
+  const contractTotal = monthlyFee * timeHorizon;
 
   return (
     <div className="space-y-4">
@@ -22,7 +33,7 @@ const SummaryTabContent = ({ quote }: SummaryTabContentProps) => {
           <div className="flex justify-between items-center">
             <div>
               <p className="text-sm text-muted-foreground">Monthly Fee</p>
-              <p className="text-2xl font-bold">${total_fee?.toLocaleString(undefined, {maximumFractionDigits: 2})}/month</p>
+              <p className="text-2xl font-bold">${safeFormat(total_fee)}/month</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Contract Duration</p>
@@ -31,8 +42,7 @@ const SummaryTabContent = ({ quote }: SummaryTabContentProps) => {
             <div>
               <p className="text-sm text-muted-foreground">Contract Total</p>
               <p className="text-xl font-medium">
-                ${((quoteDetails.totalFee || total_fee || 0) * timeHorizon)
-                    .toLocaleString(undefined, {maximumFractionDigits: 2})}
+                ${safeFormat(contractTotal)}
               </p>
             </div>
           </div>
@@ -47,7 +57,7 @@ const SummaryTabContent = ({ quote }: SummaryTabContentProps) => {
           <CardContent>
             <p className="font-medium">{quote.machine_name}</p>
             <p className="text-sm text-muted-foreground mt-1">
-              Value: ${quoteDetails.machineValue?.toLocaleString() || "0"}
+              Value: ${safeFormat(quoteDetails.machineValue)}
             </p>
           </CardContent>
         </Card>
@@ -92,7 +102,7 @@ const SummaryTabContent = ({ quote }: SummaryTabContentProps) => {
                   </table>
                 </div>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Value: ${quoteDetails.servicesPresentValue?.toLocaleString(undefined, {maximumFractionDigits: 2}) || "0"}
+                  Value: ${safeFormat(quoteDetails.servicesPresentValue)}
                 </p>
               </>
             ) : (

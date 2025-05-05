@@ -28,6 +28,13 @@ const CalculationsTabContent = ({ quote }: CalculationsTabContentProps) => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
   
+  // Safe formatting function to handle null/undefined values
+  const safeFormat = (value: any) => {
+    return value !== null && value !== undefined 
+      ? value.toLocaleString(undefined, {maximumFractionDigits: 2})
+      : "0.00";
+  };
+  
   // Get current items based on active table
   let currentItems: any[] = [];
   let tableName = "";
@@ -99,11 +106,11 @@ const CalculationsTabContent = ({ quote }: CalculationsTabContentProps) => {
                 </TableRow>
                 <TableRow>
                   <TableCell>Discount Rate</TableCell>
-                  <TableCell className="text-right">{quoteDetails.totalRate?.toFixed(2) || 0}%</TableCell>
+                  <TableCell className="text-right">{quoteDetails.totalRate ? quoteDetails.totalRate.toFixed(2) : "0.00"}%</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell>Present Value of Services</TableCell>
-                  <TableCell className="text-right">${quoteDetails.servicesPresentValue?.toLocaleString(undefined, {maximumFractionDigits: 2}) || "0.00"}</TableCell>
+                  <TableCell className="text-right">${safeFormat(quoteDetails.servicesPresentValue)}</TableCell>
                 </TableRow>
               </TableBody>
             </Table>
@@ -220,7 +227,7 @@ const CalculationsTabContent = ({ quote }: CalculationsTabContentProps) => {
                 <TableBody>
                   <TableRow>
                     <TableCell className="font-semibold">Initial</TableCell>
-                    <TableCell className="text-right font-semibold">${initialValue.toLocaleString(undefined, {maximumFractionDigits: 2})}</TableCell>
+                    <TableCell className="text-right font-semibold">${safeFormat(initialValue)}</TableCell>
                     <TableCell className="text-right">-</TableCell>
                     <TableCell className="text-right">-</TableCell>
                     <TableCell className="text-right">-</TableCell>
@@ -229,17 +236,17 @@ const CalculationsTabContent = ({ quote }: CalculationsTabContentProps) => {
                   {currentItems.map((item, index) => (
                     <TableRow key={index}>
                       <TableCell>{item.month}</TableCell>
-                      <TableCell className="text-right">${item.remainingCapital.toLocaleString(undefined, {maximumFractionDigits: 2})}</TableCell>
-                      <TableCell className="text-right">${item.capitalPortion.toLocaleString(undefined, {maximumFractionDigits: 2})}</TableCell>
-                      <TableCell className="text-right">${item.interestPortion.toLocaleString(undefined, {maximumFractionDigits: 2})}</TableCell>
-                      <TableCell className="text-right">${item.fee.toLocaleString(undefined, {maximumFractionDigits: 2})}</TableCell>
+                      <TableCell className="text-right">${safeFormat(item.remainingCapital)}</TableCell>
+                      <TableCell className="text-right">${safeFormat(item.capitalPortion)}</TableCell>
+                      <TableCell className="text-right">${safeFormat(item.interestPortion)}</TableCell>
+                      <TableCell className="text-right">${safeFormat(item.fee)}</TableCell>
                     </TableRow>
                   ))}
                   
                   {residualValue > 0 && (
                     <TableRow>
                       <TableCell className="font-semibold">Residual</TableCell>
-                      <TableCell className="text-right font-semibold">${residualValue.toLocaleString(undefined, {maximumFractionDigits: 2})}</TableCell>
+                      <TableCell className="text-right font-semibold">${safeFormat(residualValue)}</TableCell>
                       <TableCell className="text-right">-</TableCell>
                       <TableCell className="text-right">-</TableCell>
                       <TableCell className="text-right">-</TableCell>
