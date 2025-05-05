@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -393,14 +392,14 @@ const MachineCatalog: React.FC = () => {
               <div className="flex flex-col gap-2">
                 <Label htmlFor="customer">Customer (Optional)</Label>
                 <Select 
-                  value={newMachine.customer_id || ""} 
-                  onValueChange={(value) => setNewMachine({...newMachine, customer_id: value || undefined})}
+                  value={newMachine.customer_id || "none"} 
+                  onValueChange={(value) => setNewMachine({...newMachine, customer_id: value === "none" ? undefined : value})}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select customer (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     {customers.map(customer => (
                       <SelectItem key={customer.id} value={customer.id}>
                         {customer.name}

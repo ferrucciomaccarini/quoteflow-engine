@@ -19,7 +19,7 @@ const MachineSelector: React.FC<MachineSelectorProps> = ({
     <div className="w-64">
       <Label htmlFor="machine-select">Select Machine</Label>
       <Select 
-        value={selectedMachineId} 
+        value={selectedMachineId || "no-selection"} 
         onValueChange={onMachineChange}
       >
         <SelectTrigger className="mt-1">
@@ -31,6 +31,9 @@ const MachineSelector: React.FC<MachineSelectorProps> = ({
               {machine.name}
             </SelectItem>
           ))}
+          {machines.length === 0 && (
+            <SelectItem value="no-machines">No machines available</SelectItem>
+          )}
         </SelectContent>
       </Select>
     </div>
