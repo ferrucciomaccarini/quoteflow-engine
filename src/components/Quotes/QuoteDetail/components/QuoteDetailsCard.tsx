@@ -16,12 +16,6 @@ interface QuoteDetailsCardProps {
 const QuoteDetailsCard = ({ quote, navigate }: QuoteDetailsCardProps) => {
   const { customer_name, machine_name, status } = quote;
   
-  // Safely access machine value with a null check
-  const machineValue = quote.quote_data?.machineValue;
-  const formattedMachineValue = machineValue !== null && machineValue !== undefined 
-    ? machineValue.toLocaleString() 
-    : "0";
-  
   return (
     <Card className="border-primary/20">
       <CardHeader className="bg-muted/50">
@@ -53,7 +47,7 @@ const QuoteDetailsCard = ({ quote, navigate }: QuoteDetailsCardProps) => {
               <dt className="text-muted-foreground">Machine:</dt>
               <dd>{machine_name}</dd>
               <dt className="text-muted-foreground">Value:</dt>
-              <dd>${formattedMachineValue}</dd>
+              <dd>${quote.quote_data?.machineValue?.toLocaleString() || "0"}</dd>
             </dl>
           </div>
         </div>
