@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -5,26 +6,26 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { DataTable } from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Edit, Trash2, Eye } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/components/ui/use-toast";
+import { Plus, Eye, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Machine as DatabaseMachine, MachineInsert, MachineCategory as DatabaseMachineCategory } from "@/types/database";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Machine {
   id: string;
   name: string;
   category: string;
-  category_id: string | null;
   acquisition_value: number;
-  average_annual_usage_hours: number | null;
-  estimated_useful_life: number | null;
-  description: string | null;
-  customer_id: string | null;
-  customer_name?: string;
+  description?: string;
+  daily_rate?: number;
+  hourly_rate?: number;
+  customer_id?: string;
+  customers?: { name: string } | null;
+  machine_categories?: { name: string } | null;
+  category_id?: string;
 }
 
 interface MachineCategory {
@@ -32,57 +33,90 @@ interface MachineCategory {
   name: string;
 }
 
-const MachineCatalog = () => {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const navigate = useNavigate();
+interface Customer {
+  id: string;
+  name: string;
+}
+
+const MachineCatalog: React.FC = () => {
   const [machines, setMachines] = useState<Machine[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [customers, setCustomers] = useState<{id: string, name: string}[]>([]);
   const [categories, setCategories] = useState<MachineCategory[]>([]);
-  const [newMachine, setNewMachine] = useState<Partial<MachineInsert>>({
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isError, setIsError] = useState<boolean>(false);
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
+  const [newMachine, setNewMachine] = useState<Partial<Machine>>({
     name: "",
-    category_id: null,
-    category: "", // Default value to ensure it's not undefined
+    category: "",
     acquisition_value: 0,
+    description: "",
     daily_rate: 0,
     hourly_rate: 0,
-    average_annual_usage_hours: 0,
-    estimated_useful_life: 0,
-    description: "",
-    customer_id: null
   });
+  
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
 
+  // Fetch machine data
   useEffect(() => {
     const fetchMachines = async () => {
-      if (!user) return;
-
+      if (!isAuthenticated) {
+        setIsLoading(false);
+        return;
+      }
+      
       try {
         setIsLoading(true);
-        const { data, error } = await supabase
-          .from('machines')
-          .select(`
-            *,
-            customers(name),
-            machine_categories(name)
-          `)
-          .eq('user_id', user.id);
-
-        if (error) throw error;
+        setIsError(false);
         
-        const transformedData = data.map(item => ({
-          ...item,
-          category: item.machine_categories?.name || item.category || "Uncategorized",
-          customer_name: item.customers?.name || "No Customer"
-        }));
-
-        setMachines(transformedData);
+        console.log("Fetching machines data for user:", user?.id);
+        
+        // First, fetch categories for reference
+        const { data: categoryData, error: categoryError } = await supabase
+          .from('machine_categories')
+          .select('id, name')
+          .eq('user_id', user?.id);
+        
+        if (categoryError) {
+          console.error("Error fetching machine categories:", categoryError);
+          throw categoryError;
+        }
+        
+        setCategories(categoryData || []);
+        
+        // Then fetch customers for reference
+        const { data: customerData, error: customerError } = await supabase
+          .from('customers')
+          .select('id, name')
+          .eq('user_id', user?.id);
+        
+        if (customerError) {
+          console.error("Error fetching customers:", customerError);
+          throw customerError;
+        }
+        
+        setCustomers(customerData || []);
+        
+        // Finally fetch machines with related data
+        const { data: machineData, error: machineError } = await supabase
+          .from('machines')
+          .select('*, customers(name), machine_categories(name)')
+          .eq('user_id', user?.id);
+        
+        if (machineError) {
+          console.error("Error fetching machines:", machineError);
+          throw machineError;
+        }
+        
+        console.log("Received machines data:", machineData);
+        setMachines(machineData || []);
       } catch (error: any) {
-        console.error('Error fetching machines:', error);
+        console.error('Error in fetch operation:', error);
+        setIsError(true);
         toast({
-          title: "Error",
-          description: error.message || "Failed to load machines",
+          title: "Error loading machines",
+          description: error.message || "Failed to load machine data. Please try refreshing the page.",
           variant: "destructive",
         });
       } finally {
@@ -90,119 +124,68 @@ const MachineCatalog = () => {
       }
     };
 
-    const fetchCustomers = async () => {
-      if (!user) return;
-
-      try {
-        const { data, error } = await supabase
-          .from('customers')
-          .select('id, name')
-          .eq('user_id', user.id);
-
-        if (error) throw error;
-        setCustomers(data || []);
-      } catch (error) {
-        console.error('Error fetching customers:', error);
-      }
-    };
-
-    const fetchCategories = async () => {
-      if (!user) return;
-
-      try {
-        const { data, error } = await supabase
-          .from('machine_categories')
-          .select('id, name')
-          .eq('user_id', user.id);
-
-        if (error) throw error;
-        setCategories(data || []);
-      } catch (error) {
-        console.error('Error fetching machine categories:', error);
-      }
-    };
-
     fetchMachines();
-    fetchCustomers();
-    fetchCategories();
-  }, [user, toast]);
+  }, [user, isAuthenticated, toast]);
 
   const handleAddMachine = async () => {
-    if (!user) return;
-    
-    if (!newMachine.name) {
+    if (!isAuthenticated || !user) {
       toast({
-        title: "Error",
-        description: "Machine name is required",
+        title: "Authentication Required",
+        description: "Please log in to add machines",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!newMachine.name || !newMachine.category || !newMachine.acquisition_value) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill out all required fields",
         variant: "destructive",
       });
       return;
     }
 
     try {
-      const machineData: MachineInsert = {
+      const machineToInsert = {
         name: newMachine.name,
-        category: '', // This will be set below
-        user_id: user.id,
-        acquisition_value: newMachine.acquisition_value || 0,
+        category: newMachine.category,
+        category_id: newMachine.category_id,
+        acquisition_value: newMachine.acquisition_value,
+        description: newMachine.description || "",
         daily_rate: newMachine.daily_rate || 0,
         hourly_rate: newMachine.hourly_rate || 0,
-        category_id: newMachine.category_id || null,
-        description: newMachine.description || null,
-        customer_id: newMachine.customer_id || null,
-        average_annual_usage_hours: newMachine.average_annual_usage_hours || 0,
-        estimated_useful_life: newMachine.estimated_useful_life || 0
+        customer_id: newMachine.customer_id,
+        user_id: user.id,
       };
-
-      if (machineData.category_id) {
-        const category = categories.find(c => c.id === machineData.category_id);
-        if (category) {
-          machineData.category = category.name;
-        } else {
-          machineData.category = "Uncategorized";
-        }
-      } else {
-        machineData.category = "Uncategorized";
-      }
 
       const { data, error } = await supabase
         .from('machines')
-        .insert(machineData)
-        .select(`
-          *,
-          customers(name),
-          machine_categories(name)
-        `)
-        .single();
+        .insert(machineToInsert)
+        .select();
 
       if (error) throw error;
 
-      const newMachineWithExtras = {
-        ...data,
-        category: data.machine_categories?.name || data.category || "Uncategorized",
-        customer_name: data.customers?.name || "No Customer"
-      };
+      toast({
+        title: "Machine Added",
+        description: "The machine has been added to your catalog"
+      });
 
-      setMachines([...machines, newMachineWithExtras]);
-
+      // Reset form and close dialog
       setNewMachine({
         name: "",
-        category_id: null,
         category: "",
         acquisition_value: 0,
+        description: "",
         daily_rate: 0,
         hourly_rate: 0,
-        average_annual_usage_hours: 0,
-        estimated_useful_life: 0,
-        description: "",
-        customer_id: null
       });
-      setIsAddDialogOpen(false);
+      setIsDialogOpen(false);
       
-      toast({
-        title: "Success",
-        description: "Machine added to catalog",
-      });
+      // Refresh the machines list
+      if (data) {
+        setMachines([...machines, data[0]]);
+      }
     } catch (error: any) {
       console.error('Error adding machine:', error);
       toast({
@@ -214,22 +197,21 @@ const MachineCatalog = () => {
   };
 
   const handleDeleteMachine = async (id: string) => {
-    if (!user) return;
-
+    if (!isAuthenticated) return;
+    
     try {
       const { error } = await supabase
         .from('machines')
         .delete()
         .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('user_id', user?.id);
 
       if (error) throw error;
 
       setMachines(machines.filter(machine => machine.id !== id));
-      
       toast({
-        title: "Machine removed",
-        description: "The machine has been removed from the catalog",
+        title: "Machine Deleted",
+        description: "The machine has been removed from your catalog"
       });
     } catch (error: any) {
       console.error('Error deleting machine:', error);
@@ -241,51 +223,70 @@ const MachineCatalog = () => {
     }
   };
 
-  const machineColumns = [
-    { header: "ID", accessorKey: "id" },
+  const columns = [
     { header: "Name", accessorKey: "name" },
     { header: "Category", accessorKey: "category" },
-    { header: "Customer", accessorKey: "customer_name" },
     { 
-      header: "Acquisition Value", 
+      header: "Value", 
       accessorKey: "acquisition_value",
-      cell: (row: Machine) => `$${row.acquisition_value?.toLocaleString() || '0'}`
+      cell: (info: any) => `$${Number(info.getValue()).toLocaleString()}` 
     },
     { 
-      header: "Annual Usage Hours", 
-      accessorKey: "average_annual_usage_hours",
-      cell: (row: Machine) => `${row.average_annual_usage_hours || '0'} hours`
+      header: "Daily Rate", 
+      accessorKey: "daily_rate",
+      cell: (info: any) => info.getValue() ? `$${Number(info.getValue()).toLocaleString()}` : "N/A"
     },
     { 
-      header: "Useful Life", 
-      accessorKey: "estimated_useful_life",
-      cell: (row: Machine) => `${row.estimated_useful_life || '0'} years`
+      header: "Hourly Rate", 
+      accessorKey: "hourly_rate",
+      cell: (info: any) => info.getValue() ? `$${Number(info.getValue()).toLocaleString()}` : "N/A"
+    },
+    { 
+      header: "Customer", 
+      accessorKey: "customers.name", 
+      cell: (info: any) => info.getValue() || "None"
     },
     {
       header: "Actions",
       accessorKey: "id",
-      cell: (row: Machine) => (
+      cell: (info: any) => (
         <div className="flex space-x-2">
-          <Button variant="outline" size="sm" onClick={() => navigate(`/machines/${row.id}`)}>
-            <Eye className="w-4 h-4" />
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => navigate(`/machines/${info.getValue()}`)}
+          >
+            <Eye className="h-4 w-4" />
           </Button>
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={() => handleDeleteMachine(row.id)}
+            onClick={() => handleDeleteMachine(info.getValue())}
           >
-            <Trash2 className="w-4 h-4 text-red-500" />
+            <Trash2 className="h-4 w-4 text-red-500" />
           </Button>
         </div>
       )
     }
   ];
 
-  if (isLoading) {
+  // If not authenticated, show authentication required message
+  if (!isAuthenticated) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Machine Catalog</CardTitle>
+          <CardDescription>
+            Authentication Required
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center justify-center p-10">
+          <p className="mb-4 text-center">Please log in to view and manage your machinery.</p>
+          <Button onClick={() => navigate('/login')}>
+            Login
+          </Button>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -293,152 +294,172 @@ const MachineCatalog = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Machine Catalog</h1>
+          <h1 className="text-3xl font-bold">Machine Catalog</h1>
           <p className="text-gray-600">
-            Manage your machinery and equipment
+            Manage your equipment and machinery
           </p>
         </div>
-        <div className="flex space-x-2">
-          <Button variant="outline" onClick={() => navigate('/machine-categories')}>
-            Manage Categories
-          </Button>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2" size={18} />
-                Add Machine
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[625px]">
-              <DialogHeader>
-                <DialogTitle>Add New Machine</DialogTitle>
-                <DialogDescription>
-                  Add a new machine to your equipment catalog
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor="name">Machine Name*</Label>
-                    <Input 
-                      id="name"
-                      value={newMachine.name}
-                      onChange={(e) => setNewMachine({...newMachine, name: e.target.value})}
-                      placeholder="Enter machine name"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor="category">Category*</Label>
+        
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2" size={18} />
+              Add Machine
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[625px]">
+            <DialogHeader>
+              <DialogTitle>Add New Machine</DialogTitle>
+              <DialogDescription>
+                Add a new machine to your equipment catalog
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="name">Machine Name*</Label>
+                <Input 
+                  id="name" 
+                  value={newMachine.name} 
+                  onChange={(e) => setNewMachine({...newMachine, name: e.target.value})} 
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="category">Category*</Label>
+                  {categories.length > 0 ? (
                     <Select 
-                      value={newMachine.category_id || undefined} 
-                      onValueChange={(value) => setNewMachine({...newMachine, category_id: value})}
+                      value={newMachine.category_id} 
+                      onValueChange={(value) => {
+                        const selectedCategory = categories.find(cat => cat.id === value);
+                        setNewMachine({
+                          ...newMachine, 
+                          category_id: value,
+                          category: selectedCategory ? selectedCategory.name : ''
+                        });
+                      }}
                     >
-                      <SelectTrigger id="category">
+                      <SelectTrigger>
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
-                        {categories.length === 0 ? (
-                          <SelectItem value="none" disabled>No categories available</SelectItem>
-                        ) : (
-                          categories.map((category) => (
-                            <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
-                          ))
-                        )}
+                        {categories.map(category => (
+                          <SelectItem key={category.id} value={category.id}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
-                    {categories.length === 0 && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Please add categories first from the Machine Categories page
-                      </p>
-                    )}
-                  </div>
+                  ) : (
+                    <Input 
+                      id="category" 
+                      value={newMachine.category} 
+                      onChange={(e) => setNewMachine({...newMachine, category: e.target.value})} 
+                    />
+                  )}
                 </div>
-
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="customer">Customer</Label>
-                  <Select 
-                    value={newMachine.customer_id || undefined} 
-                    onValueChange={(value) => setNewMachine({...newMachine, customer_id: value || null})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a customer (optional)" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      {customers.map((customer) => (
-                        <SelectItem key={customer.id} value={customer.id}>{customer.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor="acquisitionValue">Acquisition Value ($)</Label>
-                    <Input 
-                      id="acquisitionValue"
-                      type="number"
-                      value={newMachine.acquisition_value || ""}
-                      onChange={(e) => setNewMachine({
-                        ...newMachine, 
-                        acquisition_value: parseFloat(e.target.value) || 0
-                      })}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor="averageAnnualUsage">Annual Usage Hours</Label>
-                    <Input 
-                      id="averageAnnualUsage"
-                      type="number"
-                      value={newMachine.average_annual_usage_hours || ""}
-                      onChange={(e) => setNewMachine({
-                        ...newMachine, 
-                        average_annual_usage_hours: parseFloat(e.target.value) || 0
-                      })}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor="estimatedUsefulLife">Useful Life (Years)</Label>
-                    <Input 
-                      id="estimatedUsefulLife"
-                      type="number"
-                      value={newMachine.estimated_useful_life || ""}
-                      onChange={(e) => setNewMachine({
-                        ...newMachine, 
-                        estimated_useful_life: parseFloat(e.target.value) || 0
-                      })}
-                    />
-                  </div>
-                </div>
-                
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea 
-                    id="description"
-                    value={newMachine.description || ""}
-                    onChange={(e) => setNewMachine({...newMachine, description: e.target.value})}
-                    placeholder="Enter description"
+                  <Label htmlFor="acquisition_value">Acquisition Value*</Label>
+                  <Input 
+                    id="acquisition_value" 
+                    type="number" 
+                    value={newMachine.acquisition_value} 
+                    onChange={(e) => setNewMachine({...newMachine, acquisition_value: parseFloat(e.target.value)})} 
                   />
                 </div>
               </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
-                <Button onClick={handleAddMachine}>Add Machine</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="daily_rate">Daily Rate</Label>
+                  <Input 
+                    id="daily_rate" 
+                    type="number" 
+                    value={newMachine.daily_rate} 
+                    onChange={(e) => setNewMachine({...newMachine, daily_rate: parseFloat(e.target.value)})} 
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="hourly_rate">Hourly Rate</Label>
+                  <Input 
+                    id="hourly_rate" 
+                    type="number" 
+                    value={newMachine.hourly_rate} 
+                    onChange={(e) => setNewMachine({...newMachine, hourly_rate: parseFloat(e.target.value)})} 
+                  />
+                </div>
+              </div>
+              
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="customer">Customer (Optional)</Label>
+                <Select 
+                  value={newMachine.customer_id || ""} 
+                  onValueChange={(value) => setNewMachine({...newMachine, customer_id: value || undefined})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select customer (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">None</SelectItem>
+                    {customers.map(customer => (
+                      <SelectItem key={customer.id} value={customer.id}>
+                        {customer.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea 
+                  id="description" 
+                  value={newMachine.description} 
+                  onChange={(e) => setNewMachine({...newMachine, description: e.target.value})} 
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleAddMachine}>Add Machine</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Machinery List</CardTitle>
+          <CardTitle>Machinery</CardTitle>
           <CardDescription>
-            View and manage your machinery catalog
+            Browse and manage your equipment catalog
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <DataTable columns={machineColumns} data={machines} />
+          {isLoading ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+            </div>
+          ) : isError ? (
+            <div className="text-center py-8">
+              <p className="text-red-500 mb-4">Failed to load machines data.</p>
+              <Button onClick={() => window.location.reload()}>
+                Retry
+              </Button>
+            </div>
+          ) : machines.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground mb-4">No machinery in your catalog yet</p>
+              <Button onClick={() => setIsDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Your First Machine
+              </Button>
+            </div>
+          ) : (
+            <DataTable 
+              columns={columns} 
+              data={machines} 
+            />
+          )}
         </CardContent>
       </Card>
     </div>

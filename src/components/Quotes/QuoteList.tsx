@@ -30,9 +30,10 @@ interface Column<T> {
 const QuoteList = () => {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
 
   useEffect(() => {
     const fetchQuotes = async () => {
@@ -42,6 +43,11 @@ const QuoteList = () => {
       }
 
       try {
+        setLoading(true);
+        setError(null);
+        
+        console.log("Fetching quotes for user:", user.id);
+        
         const { data, error } = await supabase
           .from('quotes')
           .select('*')
@@ -53,9 +59,11 @@ const QuoteList = () => {
           throw error;
         }
 
+        console.log("Received quotes data:", data);
         setQuotes(data || []);
       } catch (error: any) {
         console.error('Error fetching quotes:', error);
+        setError(error.message || "Failed to load quotes");
         toast({
           title: "Error",
           description: "Failed to load quotes. Please try again later.",
@@ -105,12 +113,16 @@ const QuoteList = () => {
     { 
       header: "Amount", 
       accessorKey: "total_fee",
-      cell: (row) => `$${parseFloat(row.total_fee).toLocaleString()}/month`
+      cell: (row) => {
+        // Safe number formatting with fallback
+        const fee = parseFloat(row.total_fee);
+        return isNaN(fee) ? "$0.00/month" : `$${fee.toLocaleString()}/month`;
+      }
     },
     { 
       header: "Date", 
       accessorKey: "created_at",
-      cell: (row) => new Date(row.created_at).toLocaleDateString()
+      cell: (row) => row.created_at ? new Date(row.created_at).toLocaleDateString() : "N/A"
     },
     { 
       header: "Status", 
@@ -141,6 +153,35 @@ const QuoteList = () => {
     }
   ];
 
+  // If not authenticated, show auth required message
+  if (!isAuthenticated) {
+    return (
+      <div>
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold">Quotes</h1>
+            <p className="text-muted-foreground">
+              Manage your Equipment as a Service (EaaS) quotes
+            </p>
+          </div>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Authentication Required</CardTitle>
+            <CardDescription>Please log in to view your quotes</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center justify-center p-10">
+            <p className="mb-4 text-center">You need to be logged in to manage quotes.</p>
+            <Button onClick={() => navigate('/login')}>
+              Login
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -164,7 +205,14 @@ const QuoteList = () => {
         <CardContent>
           {loading ? (
             <div className="flex justify-center py-8">
-              <p>Loading quotes...</p>
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+            </div>
+          ) : error ? (
+            <div className="text-center py-8">
+              <p className="text-red-500 mb-4">{error}</p>
+              <Button onClick={() => window.location.reload()}>
+                Retry
+              </Button>
             </div>
           ) : quotes.length === 0 ? (
             <div className="text-center py-8">

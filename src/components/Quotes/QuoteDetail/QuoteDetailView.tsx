@@ -32,13 +32,21 @@ const QuoteDetailView = () => {
   const { toast } = useToast();
   const [quote, setQuote] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchQuote = async () => {
-      if (!user || !id) return;
+      if (!user || !id) {
+        setLoading(false);
+        return;
+      }
       
       try {
         setLoading(true);
+        setError(null);
+        
+        console.log("Fetching quote details for ID:", id, "User:", user.id);
+        
         // Fetch the quote details
         const { data, error } = await supabase
           .from('quotes')
@@ -47,11 +55,18 @@ const QuoteDetailView = () => {
           .eq('user_id', user.id)
           .single();
         
-        if (error) throw error;
+        if (error) {
+          console.error("Error fetching quote:", error);
+          throw error;
+        }
+        
+        console.log("Quote data received:", data);
         
         if (data) {
           // Fetch the quote calculations as well
+          console.log("Fetching quote calculations");
           const calculationsData = await fetchQuoteCalculations(id);
+          console.log("Calculations data received:", calculationsData);
           
           // Create a deep copy of quote_data to modify it, ensuring it's an object
           const quoteData: QuoteData = 
@@ -85,6 +100,7 @@ const QuoteDetailView = () => {
           
           setQuote(data);
         } else {
+          setError("Quote not found");
           toast({
             title: "Quote not found",
             description: "The requested quote could not be found.",
@@ -94,6 +110,7 @@ const QuoteDetailView = () => {
         }
       } catch (error: any) {
         console.error('Error fetching quote details:', error);
+        setError(error.message || "Failed to load quote details");
         toast({
           title: "Error",
           description: "Failed to load quote details. Please try again.",
@@ -111,7 +128,7 @@ const QuoteDetailView = () => {
     return <LoadingState />;
   }
 
-  if (!quote) {
+  if (error || !quote) {
     return <NotFoundState navigate={navigate} />;
   }
 
