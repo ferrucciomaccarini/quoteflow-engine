@@ -55,8 +55,7 @@ const CustomerCatalog = () => {
 
       try {
         setIsLoading(true);
-        console.log("Fetching customers for user ID:", user.id);
-
+        // Get customers with machine counts
         const { data, error } = await supabase
           .from('customers')
           .select(`
@@ -65,12 +64,7 @@ const CustomerCatalog = () => {
           `)
           .eq('user_id', user.id);
 
-        if (error) {
-          console.error("Error fetching customers:", error);
-          throw error;
-        }
-        
-        console.log("Customers data received:", data);
+        if (error) throw error;
         
         // Transform data to include machine_count
         const transformedData = data.map(customer => ({
@@ -95,14 +89,7 @@ const CustomerCatalog = () => {
   }, [user, toast]);
 
   const handleAddCustomer = async () => {
-    if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "Please log in to add customers",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!user) return;
     
     if (!newCustomer.name) {
       toast({
@@ -121,20 +108,13 @@ const CustomerCatalog = () => {
         user_id: user.id,
       };
 
-      console.log("Adding customer with data:", customerData);
-
       const { data, error } = await supabase
         .from('customers')
         .insert(customerData)
         .select()
         .single();
 
-      if (error) {
-        console.error("Error adding customer:", error);
-        throw error;
-      }
-
-      console.log("Customer added successfully:", data);
+      if (error) throw error;
 
       // Add the newly created customer to the state
       setCustomers([...customers, { ...data, machine_count: 0 }]);
@@ -166,8 +146,6 @@ const CustomerCatalog = () => {
     if (!user) return;
 
     try {
-      console.log("Deleting customer with ID:", id);
-      
       const { error } = await supabase
         .from('customers')
         .delete()
@@ -319,17 +297,7 @@ const CustomerCatalog = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {customers.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground mb-6">No customers found</p>
-              <Button onClick={() => setIsAddDialogOpen(true)} variant="outline">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Your First Customer
-              </Button>
-            </div>
-          ) : (
-            <DataTable columns={customerColumns} data={customers} />
-          )}
+          <DataTable columns={customerColumns} data={customers} />
         </CardContent>
       </Card>
     </div>
