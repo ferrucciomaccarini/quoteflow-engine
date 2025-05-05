@@ -228,39 +228,39 @@ const MachineCatalog: React.FC = () => {
     { 
       header: "Value", 
       accessorKey: "acquisition_value",
-      cell: (info: any) => `$${Number(info.getValue()).toLocaleString()}` 
+      cell: (info: Machine) => `$${Number(info.acquisition_value).toLocaleString()}`
     },
     { 
       header: "Daily Rate", 
       accessorKey: "daily_rate",
-      cell: (info: any) => info.getValue() ? `$${Number(info.getValue()).toLocaleString()}` : "N/A"
+      cell: (info: Machine) => info.daily_rate ? `$${Number(info.daily_rate).toLocaleString()}` : "N/A"
     },
     { 
       header: "Hourly Rate", 
       accessorKey: "hourly_rate",
-      cell: (info: any) => info.getValue() ? `$${Number(info.getValue()).toLocaleString()}` : "N/A"
+      cell: (info: Machine) => info.hourly_rate ? `$${Number(info.hourly_rate).toLocaleString()}` : "N/A"
     },
     { 
       header: "Customer", 
       accessorKey: "customers.name", 
-      cell: (info: any) => info.getValue() || "None"
+      cell: (info: Machine) => info.customers?.name || "None"
     },
     {
       header: "Actions",
       accessorKey: "id",
-      cell: (info: any) => (
+      cell: (info: Machine) => (
         <div className="flex space-x-2">
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={() => navigate(`/machines/${info.getValue()}`)}
+            onClick={() => navigate(`/machines/${info.id}`)}
           >
             <Eye className="h-4 w-4" />
           </Button>
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={() => handleDeleteMachine(info.getValue())}
+            onClick={() => handleDeleteMachine(info.id)}
           >
             <Trash2 className="h-4 w-4 text-red-500" />
           </Button>
