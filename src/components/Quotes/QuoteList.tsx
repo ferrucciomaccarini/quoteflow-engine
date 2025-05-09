@@ -43,7 +43,7 @@ const QuoteList = () => {
       }
 
       try {
-        setIsLoading(true);
+        setLoading(true); // Fixed: Changed setIsLoading to setLoading
         setError(null);
         
         console.log("Fetching quotes for user:", user.id);
