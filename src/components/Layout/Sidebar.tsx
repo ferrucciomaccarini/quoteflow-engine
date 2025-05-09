@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   BarChart,
   FileText,
@@ -22,8 +22,11 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
+// Types for sidebar items
 interface SidebarItemProps {
   icon: React.ElementType;
   label: string;
@@ -32,6 +35,14 @@ interface SidebarItemProps {
   onClick?: () => void;
 }
 
+interface SidebarCollapseProps {
+  icon: React.ElementType;
+  label: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}
+
+// SidebarItem component for regular menu links
 const SidebarItem = ({ icon: Icon, label, to, active, onClick }: SidebarItemProps) => (
   <Link
     to={to}
@@ -46,13 +57,7 @@ const SidebarItem = ({ icon: Icon, label, to, active, onClick }: SidebarItemProp
   </Link>
 );
 
-interface SidebarCollapseProps {
-  icon: React.ElementType;
-  label: string;
-  children: React.ReactNode;
-  defaultOpen?: boolean;
-}
-
+// SidebarCollapse component for collapsible menu sections
 const SidebarCollapse = ({ icon: Icon, label, children, defaultOpen = false }: SidebarCollapseProps) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   
@@ -87,6 +92,7 @@ export function Sidebar() {
   const { isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const handleLogout = async () => {
     await logout();
@@ -102,7 +108,10 @@ export function Sidebar() {
   }
 
   return (
-    <div className="flex h-full w-64 flex-col border-r bg-background">
+    <div className={cn(
+      "flex h-full flex-col border-r bg-background",
+      isMobile ? "w-full" : "w-64"
+    )}>
       <div className="flex h-14 items-center border-b px-4">
         <Link to="/" className="flex items-center gap-2 font-semibold">
           <Package className="h-6 w-6" />
@@ -198,7 +207,7 @@ export function Sidebar() {
         </nav>
       </div>
       <div className="mt-auto p-4 border-t">
-        <div className="flex gap-2">
+        <div className="flex gap-2 justify-between items-center">
           <SidebarItem 
             icon={Cog} 
             label="Settings" 
@@ -208,8 +217,8 @@ export function Sidebar() {
           <Button
             variant="ghost"
             size="icon"
-            className="ml-auto"
             onClick={handleLogout}
+            className="h-9 w-9"
           >
             <LogOut className="h-5 w-5" />
           </Button>

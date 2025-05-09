@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Navigate, useNavigate } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import Logo from "@/components/common/Logo";
-import { Menu } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -23,6 +23,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     console.log("MainLayout auth state:", { isAuthenticated, isLoading, userId: user?.id, sessionActive: !!session });
   }, [isAuthenticated, isLoading, user, session]);
 
+  // Update sidebar state when screen size changes
   useEffect(() => {
     setSidebarOpen(!isMobile);
   }, [isMobile]);
@@ -51,28 +52,57 @@ const MainLayout = ({ children }: MainLayoutProps) => {
             size="icon"
             className="rounded-full shadow-lg"
           >
-            <Menu />
+            {sidebarOpen ? <X /> : <Menu />}
           </Button>
         </div>
       )}
       
-      {/* Sidebar - conditionally rendered based on state */}
-      <div className={`${sidebarOpen ? 'block' : 'hidden'} md:block ${isMobile ? 'fixed inset-0 z-40 bg-black/50' : ''}`} onClick={isMobile ? () => setSidebarOpen(false) : undefined}>
-        <div className={`${isMobile ? 'w-64 h-full' : ''}`} onClick={e => e.stopPropagation()}>
-          <Sidebar />
+      {/* Sidebar with improved mobile handling */}
+      <div 
+        className={`
+          ${sidebarOpen ? 'block' : 'hidden'} 
+          md:block 
+          ${isMobile ? 'fixed inset-0 z-40' : 'relative'}
+        `} 
+      >
+        <div 
+          className={`
+            ${isMobile ? 'bg-black/50 absolute inset-0 backdrop-blur-sm' : ''}
+          `}
+          onClick={isMobile ? () => setSidebarOpen(false) : undefined}
+        >
+          <div 
+            className={`
+              ${isMobile ? 'w-[280px] h-full' : ''} 
+              relative z-50
+            `} 
+            onClick={e => e.stopPropagation()}
+          >
+            <Sidebar />
+          </div>
         </div>
       </div>
       
       {/* Main content area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="bg-white shadow-sm p-4 border-b">
-          <div className="flex flex-col items-center mb-2">
-            <Logo />
-          </div>
-          <div className="flex justify-between items-center">
-            <h1 className="text-xl font-semibold text-gray-800 truncate">
-              {user?.companyName || "Dashboard"}
-            </h1>
+          <div className="flex items-center justify-between">
+            {/* Mobile menu toggle button when sidebar is closed */}
+            {isMobile && !sidebarOpen && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden mr-2"
+                onClick={() => setSidebarOpen(true)}
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+            )}
+            
+            <div className="flex items-center">
+              <Logo />
+            </div>
+            
             <div className="text-sm text-gray-600">
               {user?.role === "owner" && (
                 <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
@@ -81,13 +111,20 @@ const MainLayout = ({ children }: MainLayoutProps) => {
               )}
             </div>
           </div>
+          
+          <div className="mt-2">
+            <h1 className="text-xl font-semibold text-gray-800 truncate">
+              {user?.companyName || "Dashboard"}
+            </h1>
+          </div>
         </header>
+        
         <main className="p-3 md:p-6 overflow-auto">
           {children}
         </main>
       </div>
     </div>
   );
-};
+}
 
 export default MainLayout;
