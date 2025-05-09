@@ -12,7 +12,9 @@ const Machines = () => {
   
   return (
     <MainLayout>
-      <MachineCatalog />
+      <div className="w-full max-w-7xl mx-auto">
+        <MachineCatalog />
+      </div>
     </MainLayout>
   );
 };

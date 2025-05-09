@@ -16,7 +16,7 @@ const MachineSelector: React.FC<MachineSelectorProps> = ({
   onMachineChange 
 }) => {
   return (
-    <div className="w-64">
+    <div className="w-full md:w-64">
       <Label htmlFor="machine-select">Select Machine</Label>
       <Select 
         value={selectedMachineId || "no-selection"} 
