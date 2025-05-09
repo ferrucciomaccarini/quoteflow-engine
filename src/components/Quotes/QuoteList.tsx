@@ -43,11 +43,12 @@ const QuoteList = () => {
       }
 
       try {
-        setLoading(true);
+        setIsLoading(true);
         setError(null);
         
         console.log("Fetching quotes for user:", user.id);
         
+        // Ensure consistent behavior by explicitly setting consistent parameters
         const { data, error } = await supabase
           .from('quotes')
           .select('*')
@@ -60,6 +61,7 @@ const QuoteList = () => {
         }
 
         console.log("Received quotes data:", data);
+        console.log("Total quotes count:", data ? data.length : 0);
         setQuotes(data || []);
       } catch (error: any) {
         console.error('Error fetching quotes:', error);
