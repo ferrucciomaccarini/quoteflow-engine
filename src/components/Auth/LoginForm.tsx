@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -12,9 +12,17 @@ const LoginForm = ({ onToggleForm }: { onToggleForm: () => void }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const { login } = useAuth();
+  const { login, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Redirect authenticated users to dashboard
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      console.log("User already authenticated, redirecting to dashboard");
+      navigate("/dashboard", { replace: true });
+    }
+  }, [isAuthenticated, isLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,9 +48,7 @@ const LoginForm = ({ onToggleForm }: { onToggleForm: () => void }) => {
         description: "Benvenuto!",
       });
       
-      // Explicitly navigate to dashboard after successful login
-      console.log("Login form - navigating to dashboard");
-      navigate("/dashboard");
+      // The useEffect hook will handle navigation after authentication state updates
     } catch (error: any) {
       console.error("Login form - login error:", error);
       
@@ -66,6 +72,15 @@ const LoginForm = ({ onToggleForm }: { onToggleForm: () => void }) => {
       setIsLoggingIn(false);
     }
   };
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="w-full max-w-md mx-auto flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <Card className="w-full max-w-md">
