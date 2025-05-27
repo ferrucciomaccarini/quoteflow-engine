@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -24,6 +23,7 @@ import InternalRatingSpreads from "./pages/InternalRatingSpreads";
 import Owners from "./pages/Owners";
 import MachineCategories from "./pages/MachineCategories";
 import ServiceCategories from "./pages/ServiceCategories";
+import Settings from "./pages/Settings";
 
 // Configure React Query
 const queryClient = new QueryClient({
@@ -62,6 +62,7 @@ const App = () => (
             <Route path="/credit-bureau-spreads" element={<CreditBureauSpreads />} />
             <Route path="/internal-rating-spreads" element={<InternalRatingSpreads />} />
             <Route path="/owners" element={<Owners />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
