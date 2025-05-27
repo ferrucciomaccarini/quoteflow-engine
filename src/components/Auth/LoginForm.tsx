@@ -18,22 +18,48 @@ const LoginForm = ({ onToggleForm }: { onToggleForm: () => void }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!email || !password) {
+      toast({
+        title: "Campi richiesti",
+        description: "Inserisci email e password per accedere.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoggingIn(true);
+    console.log("Form submission - attempting login for:", email);
 
     try {
       await login(email, password);
+      console.log("Login form - login successful, showing success toast");
+      
       toast({
-        title: "Login successful",
-        description: "Welcome back!",
+        title: "Accesso effettuato",
+        description: "Benvenuto!",
       });
       
       // Explicitly navigate to dashboard after successful login
+      console.log("Login form - navigating to dashboard");
       navigate("/dashboard");
     } catch (error: any) {
-      console.error("Login error:", error);
+      console.error("Login form - login error:", error);
+      
+      let errorMessage = "Controlla le tue credenziali e riprova.";
+      
+      // Handle specific error cases
+      if (error.message?.includes("Invalid login credentials")) {
+        errorMessage = "Email o password non corrette.";
+      } else if (error.message?.includes("Email not confirmed")) {
+        errorMessage = "Conferma la tua email prima di accedere.";
+      } else if (error.message?.includes("Too many requests")) {
+        errorMessage = "Troppi tentativi di accesso. Riprova più tardi.";
+      }
+      
       toast({
-        title: "Login failed",
-        description: error.message || "Please check your credentials and try again.",
+        title: "Accesso fallito",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -46,7 +72,7 @@ const LoginForm = ({ onToggleForm }: { onToggleForm: () => void }) => {
       <CardHeader>
         <CardTitle className="text-2xl font-bold text-center">Pmix EaaS Login</CardTitle>
         <CardDescription className="text-center">
-          Enter your credentials below to access the Pmix EaaS platform.
+          Inserisci le tue credenziali per accedere alla piattaforma Pmix EaaS.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -58,8 +84,9 @@ const LoginForm = ({ onToggleForm }: { onToggleForm: () => void }) => {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
+              placeholder="Inserisci la tua email"
               required
+              disabled={isLoggingIn}
             />
           </div>
           <div className="space-y-2">
@@ -69,8 +96,9 @@ const LoginForm = ({ onToggleForm }: { onToggleForm: () => void }) => {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
+              placeholder="Inserisci la tua password"
               required
+              disabled={isLoggingIn}
             />
           </div>
           <Button
@@ -78,15 +106,15 @@ const LoginForm = ({ onToggleForm }: { onToggleForm: () => void }) => {
             className="w-full"
             disabled={isLoggingIn}
           >
-            {isLoggingIn ? "Logging in..." : "Log In"}
+            {isLoggingIn ? "Accesso in corso..." : "Accedi"}
           </Button>
         </form>
       </CardContent>
       <CardFooter className="flex justify-center text-sm">
         <p>
-          New to Pmix?{" "}
-          <Button variant="link" className="p-0" onClick={onToggleForm}>
-            Create an account
+          Nuovo su Pmix?{" "}
+          <Button variant="link" className="p-0" onClick={onToggleForm} disabled={isLoggingIn}>
+            Crea un account
           </Button>
         </p>
       </CardFooter>
