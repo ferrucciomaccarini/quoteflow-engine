@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import LoginForm from "@/components/Auth/LoginForm";
 import RegisterForm from "@/components/Auth/RegisterForm";
@@ -11,6 +11,16 @@ const Login = () => {
   const { isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+
+  // Check if this is a password recovery link and redirect accordingly
+  useEffect(() => {
+    const type = searchParams.get('type');
+    if (type === 'recovery') {
+      // Redirect to reset-password with all URL parameters preserved
+      navigate(`/reset-password${location.search}`);
+    }
+  }, [searchParams, navigate, location.search]);
 
   // Redirect to dashboard if already authenticated
   useEffect(() => {
