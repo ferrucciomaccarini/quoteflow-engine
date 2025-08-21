@@ -12,7 +12,10 @@ const LoginForm = ({ onToggleForm }: { onToggleForm: () => void }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const { login, isAuthenticated, isLoading } = useAuth();
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [isResetting, setIsResetting] = useState(false);
+  const { login, resetPassword, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -32,6 +35,38 @@ const LoginForm = ({ onToggleForm }: { onToggleForm: () => void }) => {
       title: "Modalità Demo",
       description: "Credenziali demo caricate. Clicca 'Accedi' per continuare.",
     });
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!resetEmail) {
+      toast({
+        title: "Email richiesta",
+        description: "Inserisci la tua email per recuperare la password.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsResetting(true);
+    try {
+      await resetPassword(resetEmail);
+      toast({
+        title: "Email inviata",
+        description: "Controlla la tua email per le istruzioni di reset della password.",
+      });
+      setShowForgotPassword(false);
+      setResetEmail("");
+    } catch (error: any) {
+      toast({
+        title: "Errore",
+        description: "Impossibile inviare l'email di reset. Riprova più tardi.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsResetting(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -167,14 +202,76 @@ const LoginForm = ({ onToggleForm }: { onToggleForm: () => void }) => {
           </div>
         </form>
       </CardContent>
-      <CardFooter className="flex justify-center text-sm">
-        <p>
-          Nuovo su Pmix?{" "}
-          <Button variant="link" className="p-0" onClick={onToggleForm} disabled={isLoggingIn}>
-            Crea un account
+      <CardFooter className="flex flex-col gap-2 text-sm">
+        <div className="flex justify-center">
+          <p>
+            Nuovo su Pmix?{" "}
+            <Button variant="link" className="p-0" onClick={onToggleForm} disabled={isLoggingIn}>
+              Crea un account
+            </Button>
+          </p>
+        </div>
+        <div className="flex justify-center">
+          <Button 
+            variant="link" 
+            className="p-0 text-xs" 
+            onClick={() => setShowForgotPassword(true)}
+            disabled={isLoggingIn}
+          >
+            Password dimenticata?
           </Button>
-        </p>
+        </div>
       </CardFooter>
+
+      {/* Modale per reset password */}
+      {showForgotPassword && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md mx-4">
+            <CardHeader>
+              <CardTitle className="text-xl">Recupera Password</CardTitle>
+              <CardDescription>
+                Inserisci la tua email e ti invieremo un link per resettare la password.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="resetEmail">Email</Label>
+                  <Input
+                    id="resetEmail"
+                    type="email"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    placeholder="Inserisci la tua email"
+                    required
+                    disabled={isResetting}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    type="submit"
+                    className="flex-1"
+                    disabled={isResetting}
+                  >
+                    {isResetting ? "Invio in corso..." : "Invia Email"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowForgotPassword(false);
+                      setResetEmail("");
+                    }}
+                    disabled={isResetting}
+                  >
+                    Annulla
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </Card>
   );
 };

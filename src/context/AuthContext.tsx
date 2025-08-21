@@ -20,6 +20,7 @@ interface AuthContextProps {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   logout: () => void;
   isAdmin: boolean;
   isOwner: boolean;
@@ -174,6 +175,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const resetPassword = async (email: string): Promise<void> => {
+    console.log("Attempting password reset for:", email);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`
+      });
+      
+      if (error) {
+        console.error("Password reset error:", error);
+        throw error;
+      }
+      
+      console.log("Password reset email sent successfully");
+    } catch (error: any) {
+      console.error("Password reset failed:", error);
+      throw error;
+    }
+  };
+
   const logout = async () => {
     console.log("Attempting logout");
     try {
@@ -209,6 +229,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         login,
         register,
+        resetPassword,
         logout,
         isAdmin: user?.role === "admin",
         isOwner: user?.role === "owner"
