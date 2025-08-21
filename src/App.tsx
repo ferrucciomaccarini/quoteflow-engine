@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./context/AuthContext";
 import Login from "./pages/Login";
+import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import Machines from "./pages/Machines";
 import Services from "./pages/Services";
@@ -24,6 +25,8 @@ import Owners from "./pages/Owners";
 import MachineCategories from "./pages/MachineCategories";
 import ServiceCategories from "./pages/ServiceCategories";
 import Settings from "./pages/Settings";
+import ProtectedRoute from "./components/Auth/ProtectedRoute";
+import PublicRoute from "./components/Auth/PublicRoute";
 
 // Configure React Query
 const queryClient = new QueryClient({
@@ -43,26 +46,32 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
+            {/* Public Routes - redirect to dashboard if authenticated */}
             <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/machines" element={<Machines />} />
-            <Route path="/machines/:id" element={<MachineDetails />} />
-            <Route path="/machine-categories" element={<MachineCategories />} />
-            <Route path="/services" element={<Services />} />
-            <Route path="/services/:id" element={<ServiceDetails />} />
-            <Route path="/service-categories" element={<ServiceCategories />} />
-            <Route path="/customers" element={<Customers />} />
-            <Route path="/customers/:id" element={<CustomerDetails />} />
-            <Route path="/quotes" element={<Quotes />} />
-            <Route path="/quotes/new" element={<NewQuote />} />
-            <Route path="/quotes/:id" element={<QuoteDetail />} />
-            <Route path="/risk-assessment" element={<RiskAssessment />} />
-            <Route path="/risk-assessment/:machineId" element={<RiskAssessment />} />
-            <Route path="/credit-bureau-spreads" element={<CreditBureauSpreads />} />
-            <Route path="/internal-rating-spreads" element={<InternalRatingSpreads />} />
-            <Route path="/owners" element={<Owners />} />
-            <Route path="/settings" element={<Settings />} />
+            <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+            <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
+            
+            {/* Protected Routes - require authentication */}
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/machines" element={<ProtectedRoute><Machines /></ProtectedRoute>} />
+            <Route path="/machines/:id" element={<ProtectedRoute><MachineDetails /></ProtectedRoute>} />
+            <Route path="/machine-categories" element={<ProtectedRoute><MachineCategories /></ProtectedRoute>} />
+            <Route path="/services" element={<ProtectedRoute><Services /></ProtectedRoute>} />
+            <Route path="/services/:id" element={<ProtectedRoute><ServiceDetails /></ProtectedRoute>} />
+            <Route path="/service-categories" element={<ProtectedRoute><ServiceCategories /></ProtectedRoute>} />
+            <Route path="/customers" element={<ProtectedRoute><Customers /></ProtectedRoute>} />
+            <Route path="/customers/:id" element={<ProtectedRoute><CustomerDetails /></ProtectedRoute>} />
+            <Route path="/quotes" element={<ProtectedRoute><Quotes /></ProtectedRoute>} />
+            <Route path="/quotes/new" element={<ProtectedRoute><NewQuote /></ProtectedRoute>} />
+            <Route path="/quotes/:id" element={<ProtectedRoute><QuoteDetail /></ProtectedRoute>} />
+            <Route path="/risk-assessment" element={<ProtectedRoute><RiskAssessment /></ProtectedRoute>} />
+            <Route path="/risk-assessment/:machineId" element={<ProtectedRoute><RiskAssessment /></ProtectedRoute>} />
+            <Route path="/credit-bureau-spreads" element={<ProtectedRoute><CreditBureauSpreads /></ProtectedRoute>} />
+            <Route path="/internal-rating-spreads" element={<ProtectedRoute><InternalRatingSpreads /></ProtectedRoute>} />
+            <Route path="/owners" element={<ProtectedRoute><Owners /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            
+            {/* 404 - Not Found */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
