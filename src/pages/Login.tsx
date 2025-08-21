@@ -13,16 +13,20 @@ const Login = () => {
   const location = useLocation();
   const [searchParams] = useSearchParams();
 
-  // Check if this is a password recovery link and redirect accordingly (preserve query AND hash)
+  // Check if this is a password recovery or auth callback and redirect accordingly (preserve query AND hash)
   useEffect(() => {
-    const typeFromSearch = searchParams.get('type');
     const hash = location.hash || '';
     const hashParams = new URLSearchParams(hash.replace(/^#/, ''));
-    const typeFromHash = hashParams.get('type');
 
-    if (typeFromSearch === 'recovery' || typeFromHash === 'recovery') {
-      // Redirect to reset-password with all URL parameters preserved
-      navigate(`/reset-password${location.search}${hash}`);
+    const searchType = searchParams.get('type');
+    const hashType = hashParams.get('type');
+
+    const hasAccessToken = hashParams.has('access_token') || searchParams.has('access_token');
+    const hasCode = hashParams.has('code') || searchParams.has('code');
+
+    if (searchType === 'recovery' || hashType === 'recovery' || hasAccessToken || hasCode) {
+      console.debug('[Auth] Redirecting to /reset-password with params', { search: location.search, hash: location.hash });
+      navigate(`/reset-password${location.search}${hash}`, { replace: true });
     }
   }, [searchParams, navigate, location.search, location.hash]);
 

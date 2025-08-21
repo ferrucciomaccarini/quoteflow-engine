@@ -22,23 +22,26 @@ const ResetPassword = () => {
       const { data } = await supabase.auth.getSession();
       if (data.session) return;
 
-      // 2) Read tokens from query and hash
-      const searchAccess = searchParams.get("access_token");
-      const searchRefresh = searchParams.get("refresh_token");
-      const searchType = searchParams.get("type");
-
+      // Helpers to read from hash first (Supabase usually sends tokens/code there)
       const hash = window.location.hash || "";
       const hashParams = new URLSearchParams(hash.replace(/^#/, ""));
-      const hashAccess = hashParams.get("access_token");
-      const hashRefresh = hashParams.get("refresh_token");
-      const hashType = hashParams.get("type");
+      const getParam = (key: string) => hashParams.get(key) ?? searchParams.get(key);
 
-      const accessToken = hashAccess || searchAccess;
-      const refreshToken = hashRefresh || searchRefresh;
-      const type = hashType || searchType;
+      // 2) Handle PKCE/code flow
+      const code = getParam("code");
+      if (code) {
+        console.debug("[Auth] exchangeCodeForSession detected on reset-password");
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (!error) return;
+      }
 
-      // 3) If this is a recovery link and we have tokens, set the session explicitly
+      // 3) Handle token-in-hash/query flow
+      const accessToken = getParam("access_token");
+      const refreshToken = getParam("refresh_token");
+      const type = getParam("type");
+
       if (type === "recovery" && accessToken && refreshToken) {
+        console.debug("[Auth] setSession with recovery tokens on reset-password");
         const { error } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken,
