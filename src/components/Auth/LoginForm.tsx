@@ -24,6 +24,16 @@ const LoginForm = ({ onToggleForm }: { onToggleForm: () => void }) => {
     }
   }, [isAuthenticated, isLoading, navigate]);
 
+  const handleDemoAccess = () => {
+    setEmail("test@test.com");
+    setPassword("testtest");
+    
+    toast({
+      title: "Modalità Demo",
+      description: "Credenziali demo caricate. Clicca 'Accedi' per continuare.",
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -39,13 +49,15 @@ const LoginForm = ({ onToggleForm }: { onToggleForm: () => void }) => {
     setIsLoggingIn(true);
     console.log("Form submission - attempting login for:", email);
 
+    const isDemoUser = email === "test@test.com";
+    
     try {
       await login(email, password);
       console.log("Login form - login successful, showing success toast");
       
       toast({
         title: "Accesso effettuato",
-        description: "Benvenuto!",
+        description: isDemoUser ? "Benvenuto nella modalità demo!" : "Benvenuto!",
       });
       
       // The useEffect hook will handle navigation after authentication state updates
@@ -102,6 +114,7 @@ const LoginForm = ({ onToggleForm }: { onToggleForm: () => void }) => {
               placeholder="Inserisci la tua email"
               required
               disabled={isLoggingIn}
+              className={email === "test@test.com" ? "border-amber-500 bg-amber-50" : ""}
             />
           </div>
           <div className="space-y-2">
@@ -114,15 +127,44 @@ const LoginForm = ({ onToggleForm }: { onToggleForm: () => void }) => {
               placeholder="Inserisci la tua password"
               required
               disabled={isLoggingIn}
+              className={email === "test@test.com" ? "border-amber-500 bg-amber-50" : ""}
             />
           </div>
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={isLoggingIn}
-          >
-            {isLoggingIn ? "Accesso in corso..." : "Accedi"}
-          </Button>
+          
+          {email === "test@test.com" && (
+            <div className="bg-amber-100 border border-amber-300 rounded-lg p-3 text-sm text-amber-800">
+              🎯 <strong>Modalità Demo</strong> - Stai utilizzando le credenziali demo per testare la piattaforma.
+            </div>
+          )}
+          
+          <div className="space-y-2">
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isLoggingIn}
+            >
+              {isLoggingIn ? "Accesso in corso..." : "Accedi"}
+            </Button>
+            
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">oppure</span>
+              </div>
+            </div>
+            
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={handleDemoAccess}
+              disabled={isLoggingIn}
+            >
+              🚀 Accesso Demo
+            </Button>
+          </div>
         </form>
       </CardContent>
       <CardFooter className="flex justify-center text-sm">
