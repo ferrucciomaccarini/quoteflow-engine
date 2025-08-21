@@ -16,20 +16,47 @@ const ResetPassword = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if we have the required tokens from the email link
-    const accessToken = searchParams.get('access_token');
-    const refreshToken = searchParams.get('refresh_token');
-    const type = searchParams.get('type');
-    
-    // Only show error if this is supposed to be a recovery link but tokens are missing
-    if (type === 'recovery' && (!accessToken || !refreshToken)) {
+    // Accept tokens from both query (?...) and hash (#...) and/or an existing session
+    const ensureSession = async () => {
+      // 1) If we already have a session (recovery link logs you in), we're good
+      const { data } = await supabase.auth.getSession();
+      if (data.session) return;
+
+      // 2) Read tokens from query and hash
+      const searchAccess = searchParams.get("access_token");
+      const searchRefresh = searchParams.get("refresh_token");
+      const searchType = searchParams.get("type");
+
+      const hash = window.location.hash || "";
+      const hashParams = new URLSearchParams(hash.replace(/^#/, ""));
+      const hashAccess = hashParams.get("access_token");
+      const hashRefresh = hashParams.get("refresh_token");
+      const hashType = hashParams.get("type");
+
+      const accessToken = hashAccess || searchAccess;
+      const refreshToken = hashRefresh || searchRefresh;
+      const type = hashType || searchType;
+
+      // 3) If this is a recovery link and we have tokens, set the session explicitly
+      if (type === "recovery" && accessToken && refreshToken) {
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+        if (!error) return;
+      }
+
+      // 4) Otherwise, show an error and go back to login
       toast({
         title: "Link non valido",
         description: "Il link per il reset della password non è valido o è scaduto.",
         variant: "destructive",
       });
       navigate("/login");
-    }
+    };
+
+    // Fire and forget
+   ;(async () => { await ensureSession(); })();
   }, [searchParams, navigate, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
