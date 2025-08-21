@@ -49,7 +49,7 @@ const App = () => (
             {/* Public Routes - redirect to dashboard if authenticated */}
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-            <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             
             {/* Protected Routes - require authentication */}
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

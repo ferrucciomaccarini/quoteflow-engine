@@ -19,8 +19,10 @@ const ResetPassword = () => {
     // Check if we have the required tokens from the email link
     const accessToken = searchParams.get('access_token');
     const refreshToken = searchParams.get('refresh_token');
+    const type = searchParams.get('type');
     
-    if (!accessToken || !refreshToken) {
+    // Only show error if this is supposed to be a recovery link but tokens are missing
+    if (type === 'recovery' && (!accessToken || !refreshToken)) {
       toast({
         title: "Link non valido",
         description: "Il link per il reset della password non è valido o è scaduto.",
@@ -75,8 +77,8 @@ const ResetPassword = () => {
         description: "La tua password è stata aggiornata con successo.",
       });
 
-      // Redirect to dashboard after successful password reset
-      navigate("/dashboard");
+      // Redirect to login to force re-authentication with new password
+      navigate("/login");
     } catch (error: any) {
       toast({
         title: "Errore",
