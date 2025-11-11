@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { DEMO_USER_ID } from "@/lib/constants";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, FileText, CheckCircle2, XCircle, Clock } from "lucide-react";
@@ -13,14 +13,13 @@ import { Separator } from "@/components/ui/separator";
 const QuoteDetailView = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const { toast } = useToast();
   const [quote, setQuote] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchQuote = async () => {
-      if (!user) return;
+      if (!id) return;
       
       try {
         setLoading(true);
@@ -28,7 +27,6 @@ const QuoteDetailView = () => {
           .from('quotes')
           .select('*')
           .eq('id', id)
-          .eq('user_id', user.id)
           .single();
         
         if (error) throw error;
@@ -56,7 +54,7 @@ const QuoteDetailView = () => {
     };
     
     fetchQuote();
-  }, [id, user, toast, navigate]);
+  }, [id, toast, navigate]);
 
   const getStatusBadge = (status: string) => {
     switch(status) {

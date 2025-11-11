@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { DEMO_USER_ID } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, FileText } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -28,7 +28,6 @@ interface QuoteData {
 const QuoteDetailView = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const { toast } = useToast();
   const [quote, setQuote] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -36,7 +35,7 @@ const QuoteDetailView = () => {
 
   useEffect(() => {
     const fetchQuote = async () => {
-      if (!user || !id) {
+      if (!id) {
         setLoading(false);
         return;
       }
@@ -45,14 +44,13 @@ const QuoteDetailView = () => {
         setLoading(true);
         setError(null);
         
-        console.log("Fetching quote details for ID:", id, "User:", user.id);
+        console.log("Fetching quote details for ID:", id);
         
         // Fetch the quote details
         const { data, error } = await supabase
           .from('quotes')
           .select('*')
           .eq('id', id)
-          .eq('user_id', user.id)
           .single();
         
         if (error) {
@@ -122,7 +120,7 @@ const QuoteDetailView = () => {
     };
     
     fetchQuote();
-  }, [id, user, toast, navigate]);
+  }, [id, toast, navigate]);
 
   if (loading) {
     return <LoadingState />;

@@ -8,8 +8,8 @@ import { DataTable } from "@/components/ui/DataTable";
 import { useToast } from "@/components/ui/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/context/AuthContext";
 import { ArrowLeft, Eye, Plus } from "lucide-react";
+import { DEMO_USER_ID } from "@/lib/constants";
 
 interface Customer {
   id: string;
@@ -34,7 +34,6 @@ interface Machine {
 const CustomerDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const { toast } = useToast();
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [machines, setMachines] = useState<Machine[]>([]);
@@ -43,7 +42,7 @@ const CustomerDetails = () => {
   // Fetch customer details
   useEffect(() => {
     const fetchCustomerDetails = async () => {
-      if (!user || !id) return;
+      if (!id) return;
 
       try {
         setIsLoading(true);
@@ -53,7 +52,6 @@ const CustomerDetails = () => {
           .from('customers')
           .select('*')
           .eq('id', id)
-          .eq('user_id', user.id)
           .single();
 
         if (customerError) throw customerError;
@@ -67,8 +65,7 @@ const CustomerDetails = () => {
             *,
             services:machine_services(count)
           `)
-          .eq('customer_id', id)
-          .eq('user_id', user.id);
+          .eq('customer_id', id);
 
         if (machinesError) throw machinesError;
         
@@ -93,7 +90,7 @@ const CustomerDetails = () => {
     };
 
     fetchCustomerDetails();
-  }, [id, user, toast, navigate]);
+  }, [id, toast, navigate]);
 
   const machineColumns = [
     { header: "Name", accessorKey: "name" },

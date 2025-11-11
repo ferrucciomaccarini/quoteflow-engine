@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/DataTable";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/context/AuthContext";
 import { ArrowLeft, Eye } from "lucide-react";
+import { DEMO_USER_ID } from "@/lib/constants";
 
 interface Service {
   id: string;
@@ -39,7 +39,6 @@ interface MachineWithService {
 const ServiceDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const { toast } = useToast();
   const [service, setService] = useState<Service | null>(null);
   const [machines, setMachines] = useState<MachineWithService[]>([]);
@@ -48,7 +47,7 @@ const ServiceDetails = () => {
   // Fetch service details
   useEffect(() => {
     const fetchServiceDetails = async () => {
-      if (!user || !id) return;
+      if (!id) return;
 
       try {
         setIsLoading(true);
@@ -58,7 +57,6 @@ const ServiceDetails = () => {
           .from('services')
           .select('*')
           .eq('id', id)
-          .eq('user_id', user.id)
           .single();
 
         if (serviceError) throw serviceError;
@@ -115,7 +113,7 @@ const ServiceDetails = () => {
     };
 
     fetchServiceDetails();
-  }, [id, user, toast, navigate]);
+  }, [id, toast, navigate]);
 
   const machineColumns = [
     { header: "Machine Name", accessorKey: "machine.name" },

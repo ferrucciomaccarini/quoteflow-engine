@@ -5,27 +5,23 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { DEMO_USER_ID } from "@/lib/constants";
 import { Machine, StepComponentProps } from "./types";
 import { Loader2 } from "lucide-react";
 
 const EquipmentSelectionStep: React.FC<StepComponentProps> = ({ data, updateData }) => {
   const [machines, setMachines] = useState<Machine[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
   const { toast } = useToast();
 
   useEffect(() => {
     const fetchMachines = async () => {
-      if (!user) return;
-      
       try {
         setIsLoading(true);
         const { data: machinesData, error } = await supabase
           .from('machines')
-          .select('id, name, category, acquisition_value')
-          .eq('user_id', user.id);
+          .select('id, name, category, acquisition_value');
 
         if (error) throw error;
         
@@ -65,7 +61,7 @@ const EquipmentSelectionStep: React.FC<StepComponentProps> = ({ data, updateData
     };
 
     fetchMachines();
-  }, [user, toast]);
+  }, [toast]);
 
   const selectedMachine = machines.find(m => m.id === data.selectedMachineId);
 

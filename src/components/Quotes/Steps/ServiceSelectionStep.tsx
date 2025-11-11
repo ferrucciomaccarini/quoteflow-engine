@@ -3,28 +3,24 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { DEMO_USER_ID } from "@/lib/constants";
 import { calculateServiceEvents, calculateServicePresentValue } from "@/utils/calculations";
 import { Service, StepComponentProps } from "./types";
 
 const ServiceSelectionStep: React.FC<StepComponentProps> = ({ data, updateData }) => {
   const [services, setServices] = useState<Service[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
   const { toast } = useToast();
   const selectedMachineId = data.selectedMachineId;
 
   useEffect(() => {
     const fetchServices = async () => {
-      if (!user) return;
-      
       try {
         setIsLoading(true);
         const { data: servicesData, error } = await supabase
           .from('services')
-          .select('id, name, category, parts_cost, labor_cost, consumables_cost, interval_type, interval_value, machine_id')
-          .eq('user_id', user.id);
+          .select('id, name, category, parts_cost, labor_cost, consumables_cost, interval_type, interval_value, machine_id');
 
         if (error) throw error;
         
@@ -103,7 +99,7 @@ const ServiceSelectionStep: React.FC<StepComponentProps> = ({ data, updateData }
       setServices([]);
       setIsLoading(false);
     }
-  }, [user, toast, selectedMachineId]);
+  }, [toast, selectedMachineId]);
 
   const selectedServices = data.selectedServiceIds || [];
   

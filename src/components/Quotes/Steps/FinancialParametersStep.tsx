@@ -4,8 +4,8 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { calculateResidualValue, calculatePeriodicFee } from "@/utils/calculations";
-import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { DEMO_USER_ID } from "@/lib/constants";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { CreditBureauSpread, InternalRatingSpread, StepComponentProps } from "./types";
@@ -16,7 +16,6 @@ const FinancialParametersStep: React.FC<StepComponentProps> = ({ data, updateDat
   const primaryRisk = machineValue + servicesPresentValue;
   const residualValuePercentage = data.residualValuePercentage || 10;
   const residualValue = calculateResidualValue(machineValue, residualValuePercentage);
-  const { user } = useAuth();
   const { toast } = useToast();
   const [isLoadingSpreads, setIsLoadingSpreads] = useState(false);
   const [bureauSpreads, setBureauSpreads] = useState<CreditBureauSpread[]>([]);
@@ -24,14 +23,11 @@ const FinancialParametersStep: React.FC<StepComponentProps> = ({ data, updateDat
   
   useEffect(() => {
     const fetchSpreadRates = async () => {
-      if (!user) return;
-      
       setIsLoadingSpreads(true);
       try {
         const { data: bureauData, error: bureauError } = await supabase
           .from('credit_bureau_spreads')
           .select('*')
-          .eq('user_id', user.id)
           .order('valid_from', { ascending: false });
           
         if (bureauError) throw bureauError;
@@ -39,7 +35,6 @@ const FinancialParametersStep: React.FC<StepComponentProps> = ({ data, updateDat
         const { data: ratingData, error: ratingError } = await supabase
           .from('internal_rating_spreads')
           .select('*')
-          .eq('user_id', user.id)
           .order('valid_from', { ascending: false });
           
         if (ratingError) throw ratingError;
@@ -59,7 +54,7 @@ const FinancialParametersStep: React.FC<StepComponentProps> = ({ data, updateDat
     };
     
     fetchSpreadRates();
-  }, [user, toast]);
+  }, [toast]);
   
   const getMostRecentBureauSpread = (score: number): number => {
     const now = new Date();

@@ -2,8 +2,8 @@
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { DEMO_USER_ID } from "@/lib/constants";
 import { Link } from "react-router-dom";
 import { DataTable, Column } from "@/components/ui/DataTable";
 
@@ -24,7 +24,6 @@ interface MachineUsageData {
 }
 
 const DashboardPage: React.FC = () => {
-  const { user } = useAuth();
   const [quoteCount, setQuoteCount] = useState<number>(0);
   const [openQuoteCount, setOpenQuoteCount] = useState<number>(0);
   const [conversionRate, setConversionRate] = useState<number>(0);
@@ -34,16 +33,13 @@ const DashboardPage: React.FC = () => {
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      if (!user) return;
-      
       try {
         setIsLoading(true);
         
         // Fetch quotes count
         const { count: totalCount, error: countError } = await supabase
           .from('quotes')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id);
+          .select('*', { count: 'exact', head: true });
           
         if (countError) throw countError;
         setQuoteCount(totalCount || 0);
@@ -52,7 +48,6 @@ const DashboardPage: React.FC = () => {
         const { count: openCount, error: openError } = await supabase
           .from('quotes')
           .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id)
           .eq('status', 'Pending');
           
         if (openError) throw openError;
@@ -62,7 +57,6 @@ const DashboardPage: React.FC = () => {
         const { count: approvedCount, error: approvedError } = await supabase
           .from('quotes')
           .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id)
           .eq('status', 'Approved');
           
         if (approvedError) throw approvedError;
@@ -74,7 +68,6 @@ const DashboardPage: React.FC = () => {
         const { data: quotesData, error: quotesError } = await supabase
           .from('quotes')
           .select('id, customer_name, machine_name, total_fee, created_at, status')
-          .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .limit(5);
           
@@ -85,7 +78,6 @@ const DashboardPage: React.FC = () => {
         const { data: machinesData, error: machinesError } = await supabase
           .from('machines')
           .select('id, name')
-          .eq('user_id', user.id)
           .limit(5);
           
         if (machinesError) throw machinesError;
@@ -106,7 +98,7 @@ const DashboardPage: React.FC = () => {
     };
     
     fetchDashboardData();
-  }, [user]);
+  }, []);
 
   const quoteColumns: Column<QuoteData>[] = [
     {

@@ -17,7 +17,7 @@ import { format } from "date-fns";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { CreditBureauSpread } from "@/types/spreads";
 import { Badge } from "@/components/ui/badge";
-import { useAuth } from "@/context/AuthContext";
+import { DEMO_USER_ID } from "@/lib/constants";
 
 const formSchema = z.object({
   bureau_score: z.coerce
@@ -40,7 +40,6 @@ export default function CreditBureauSpreadManager() {
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [isHistorizingSpread, setIsHistorizingSpread] = useState(false);
   const { toast } = useToast();
-  const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
 
   const form = useForm<FormValues>({
@@ -58,15 +57,10 @@ export default function CreditBureauSpreadManager() {
       spread_rate: 1.0,
     },
   });
-
+  
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate("/login");
-      return;
-    }
-    
     fetchSpreads();
-  }, [isAuthenticated, navigate]);
+  }, []);
 
   useEffect(() => {
     if (selectedSpread && isEditDialogOpen) {
@@ -100,15 +94,6 @@ export default function CreditBureauSpreadManager() {
   };
 
   const handleAddSubmit = async (values: FormValues) => {
-    if (!user?.id) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to add a spread",
-        variant: "destructive",
-      });
-      return;
-    }
-
     try {
       const { error } = await supabase
         .from('credit_bureau_spreads')
@@ -116,7 +101,7 @@ export default function CreditBureauSpreadManager() {
           {
             bureau_score: values.bureau_score,
             spread_rate: values.spread_rate,
-            user_id: user.id,
+            user_id: DEMO_USER_ID,
           }
         ]);
 
@@ -141,7 +126,7 @@ export default function CreditBureauSpreadManager() {
   };
 
   const handleEditSubmit = async (values: FormValues) => {
-    if (!selectedSpread || !user?.id) return;
+    if (!selectedSpread) return;
 
     try {
       // First, set valid_to on the current spread
@@ -157,7 +142,7 @@ export default function CreditBureauSpreadManager() {
           {
             bureau_score: values.bureau_score,
             spread_rate: values.spread_rate,
-            user_id: user.id,
+            user_id: DEMO_USER_ID,
           }
         ]);
 
@@ -211,7 +196,7 @@ export default function CreditBureauSpreadManager() {
   };
 
   const handleHistorize = async () => {
-    if (!selectedSpread || !user?.id) return;
+    if (!selectedSpread) return;
     
     setIsHistorizingSpread(true);
     

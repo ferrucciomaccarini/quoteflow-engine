@@ -1,8 +1,8 @@
 
 import { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { DEMO_USER_ID } from "@/lib/constants";
 import { RiskData, Machine } from './types';
 import { getDefaultRiskVariables, updateRiskData } from './utils';
 import { useNavigate } from 'react-router-dom';
@@ -21,18 +21,14 @@ export const useRiskAssessment = (initialMachineId?: string) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     const loadMachines = async () => {
-      if (!user) return;
-      
       try {
         const { data: machinesData, error: machinesError } = await supabase
           .from('machines')
-          .select('id, name, acquisition_value')
-          .eq('user_id', user.id);
+          .select('id, name, acquisition_value');
           
         if (machinesError) throw machinesError;
         setMachines(machinesData || []);
@@ -66,18 +62,15 @@ export const useRiskAssessment = (initialMachineId?: string) => {
     };
     
     loadMachines();
-  }, [user, initialMachineId, toast]);
+  }, [initialMachineId, toast]);
 
   const loadRiskAssessment = async (machineId: string) => {
-    if (!user) return;
-    
     try {
       setIsLoading(true);
       
       const { data: assessment, error: assessmentError } = await supabase
         .from('risk_assessments')
         .select('*')
-        .eq('user_id', user.id)
         .eq('machine_id', machineId)
         .order('created_at', { ascending: false })
         .limit(1)
@@ -163,10 +156,10 @@ export const useRiskAssessment = (initialMachineId?: string) => {
   };
 
   const handleSave = async () => {
-    if (!user || !selectedMachine) {
+    if (!selectedMachine) {
       toast({
         title: "Error",
-        description: "No machine selected or you are not authenticated",
+        description: "No machine selected",
         variant: "destructive",
       });
       return;
@@ -176,7 +169,7 @@ export const useRiskAssessment = (initialMachineId?: string) => {
     
     try {
       const riskAssessment = {
-        user_id: user.id,
+        user_id: DEMO_USER_ID,
         machine_id: selectedMachine.id,
         av_percentage: data.avPercentage,
         annual_discount_rate: data.annualDiscountRate,
@@ -188,7 +181,6 @@ export const useRiskAssessment = (initialMachineId?: string) => {
       const { data: existingAssessment, error: checkError } = await supabase
         .from('risk_assessments')
         .select('id')
-        .eq('user_id', user.id)
         .eq('machine_id', selectedMachine.id)
         .maybeSingle();
         

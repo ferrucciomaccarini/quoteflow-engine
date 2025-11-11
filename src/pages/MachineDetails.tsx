@@ -10,8 +10,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/context/AuthContext";
 import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { DEMO_USER_ID } from "@/lib/constants";
 
 interface Machine {
   id: string;
@@ -55,7 +55,6 @@ interface Column<T> {
 const MachineDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const { toast } = useToast();
   const [machine, setMachine] = useState<Machine | null>(null);
   const [services, setServices] = useState<MachineService[]>([]);
@@ -70,7 +69,7 @@ const MachineDetails = () => {
 
   useEffect(() => {
     const fetchMachineDetails = async () => {
-      if (!user || !id) return;
+      if (!id) return;
 
       try {
         setIsLoading(true);
@@ -82,7 +81,6 @@ const MachineDetails = () => {
             customers(name)
           `)
           .eq('id', id)
-          .eq('user_id', user.id)
           .single();
 
         if (machineError) throw machineError;
@@ -106,8 +104,7 @@ const MachineDetails = () => {
 
         const { data: allServices, error: allServicesError } = await supabase
           .from('services')
-          .select('*')
-          .eq('user_id', user.id);
+          .select('*');
 
         if (allServicesError) throw allServicesError;
         
@@ -134,10 +131,10 @@ const MachineDetails = () => {
     };
 
     fetchMachineDetails();
-  }, [id, user, toast, navigate]);
+  }, [id, toast, navigate]);
 
   const handleAddServices = async () => {
-    if (!user || !id || selectedServices.length === 0) return;
+    if (!id || selectedServices.length === 0) return;
 
     try {
       const servicesToAdd = selectedServices.map(serviceId => ({
