@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from "react";
-import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { DEMO_USER_ID } from "@/lib/constants";
 import { DataTable } from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -19,7 +18,6 @@ interface MachineCategory {
 }
 
 const MachineCategoryManager = () => {
-  const { user } = useAuth();
   const { toast } = useToast();
   const [categories, setCategories] = useState<MachineCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -33,17 +31,14 @@ const MachineCategoryManager = () => {
 
   useEffect(() => {
     fetchCategories();
-  }, [user]);
+  }, []);
 
   const fetchCategories = async () => {
-    if (!user) return;
-
     try {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('machine_categories')
-        .select('*')
-        .eq('user_id', user.id);
+        .select('*');
 
       if (error) throw error;
       
@@ -61,8 +56,6 @@ const MachineCategoryManager = () => {
   };
 
   const handleAddCategory = async () => {
-    if (!user) return;
-    
     if (!newCategory.name) {
       toast({
         title: "Error",
@@ -76,7 +69,7 @@ const MachineCategoryManager = () => {
       const { data, error } = await supabase
         .from('machine_categories')
         .insert({
-          user_id: user.id,
+          user_id: DEMO_USER_ID,
           name: newCategory.name,
           description: newCategory.description || null
         })
@@ -104,7 +97,7 @@ const MachineCategoryManager = () => {
   };
 
   const handleEditCategory = async () => {
-    if (!user || !currentCategory) return;
+    if (!currentCategory) return;
     
     if (!currentCategory.name) {
       toast({
@@ -123,7 +116,6 @@ const MachineCategoryManager = () => {
           description: currentCategory.description
         })
         .eq('id', currentCategory.id)
-        .eq('user_id', user.id)
         .select()
         .single();
 
@@ -148,14 +140,11 @@ const MachineCategoryManager = () => {
   };
 
   const handleDeleteCategory = async (id: string) => {
-    if (!user) return;
-
     try {
       const { error } = await supabase
         .from('machine_categories')
         .delete()
-        .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('id', id);
 
       if (error) throw error;
 

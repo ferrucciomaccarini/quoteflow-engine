@@ -1,8 +1,7 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
+import { DEMO_USER_ID } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -29,18 +28,8 @@ const MachineManager: React.FC = () => {
   const { machines, setMachines, categories, customers, isLoading, isError } = useMachineData();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
 
   const handleAddMachine = async () => {
-    if (!isAuthenticated || !user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to add machines",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     if (!newMachine.name || !newMachine.category || !newMachine.acquisition_value) {
       toast({
         title: "Missing Information",
@@ -60,7 +49,7 @@ const MachineManager: React.FC = () => {
         daily_rate: newMachine.daily_rate || 0,
         hourly_rate: newMachine.hourly_rate || 0,
         customer_id: newMachine.customer_id,
-        user_id: user.id,
+        user_id: DEMO_USER_ID,
       };
 
       const { data, error } = await supabase
@@ -101,14 +90,11 @@ const MachineManager: React.FC = () => {
   };
 
   const handleDeleteMachine = async (id: string) => {
-    if (!isAuthenticated) return;
-    
     try {
       const { error } = await supabase
         .from('machines')
         .delete()
-        .eq('id', id)
-        .eq('user_id', user?.id);
+        .eq('id', id);
 
       if (error) throw error;
 
@@ -126,26 +112,6 @@ const MachineManager: React.FC = () => {
       });
     }
   };
-
-  // If not authenticated, show authentication required message
-  if (!isAuthenticated) {
-    return (
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>Machine Catalog</CardTitle>
-          <CardDescription>
-            Authentication Required
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center justify-center p-10">
-          <p className="mb-4 text-center">Please log in to view and manage your machinery.</p>
-          <Button onClick={() => navigate('/login')}>
-            Login
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <div>
