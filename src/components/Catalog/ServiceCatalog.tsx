@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
@@ -13,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { Service, ServiceInsert, ServiceCategory } from "@/types/database";
+import { DEMO_USER_ID } from "@/lib/constants";
 
 interface ServiceWithUI extends Service {
   machine_name?: string;
@@ -25,7 +25,6 @@ interface CategoryUI {
 }
 
 const ServiceCatalog = () => {
-  const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [services, setServices] = useState<ServiceWithUI[]>([]);
@@ -49,19 +48,17 @@ const ServiceCatalog = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!user) return;
-
       try {
         setIsLoading(true);
         
+        // Fetch all services (no user filter)
         const { data: servicesData, error: servicesError } = await supabase
           .from('services')
           .select(`
             *,
             machine:machines(name),
             service_category:service_categories(name)
-          `)
-          .eq('user_id', user.id);
+          `);
 
         if (servicesError) throw servicesError;
         
@@ -74,18 +71,18 @@ const ServiceCatalog = () => {
 
         setServices(servicesWithTotal);
         
+        // Fetch all machines (no user filter)
         const { data: machinesData, error: machinesError } = await supabase
           .from('machines')
-          .select('id, name, category')
-          .eq('user_id', user.id);
+          .select('id, name, category');
           
         if (machinesError) throw machinesError;
         setMachines(machinesData || []);
         
+        // Fetch all service categories (no user filter)
         const { data: categoriesData, error: categoriesError } = await supabase
           .from('service_categories')
-          .select('id, name')
-          .eq('user_id', user.id);
+          .select('id, name');
           
         if (categoriesError) throw categoriesError;
         setCategories(categoriesData || []);
@@ -102,11 +99,9 @@ const ServiceCatalog = () => {
     };
 
     fetchData();
-  }, [user, toast]);
+  }, [toast]);
 
   const handleAddService = async () => {
-    if (!user) return;
-    
     if (!newService.name || !newService.service_category_id || !newService.machine_id) {
       toast({
         title: "Error",
@@ -135,7 +130,7 @@ const ServiceCatalog = () => {
         description: newService.description || null,
         category: categoryName,
         machine_category: machineCategoryValue,
-        user_id: user.id
+        user_id: DEMO_USER_ID
       };
 
       const { data, error } = await supabase
@@ -189,14 +184,11 @@ const ServiceCatalog = () => {
   };
 
   const handleDeleteService = async (id: string) => {
-    if (!user) return;
-
     try {
       const { error } = await supabase
         .from('services')
         .delete()
-        .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('id', id);
 
       if (error) throw error;
 

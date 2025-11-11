@@ -1,7 +1,4 @@
-
 import React, { ReactNode, useEffect, useState } from "react";
-import { useAuth } from "@/context/AuthContext";
-import { Navigate, useNavigate } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import Logo from "@/components/common/Logo";
 import { Menu, X } from "lucide-react";
@@ -13,33 +10,13 @@ interface MainLayoutProps {
 }
 
 const MainLayout = ({ children }: MainLayoutProps) => {
-  const { isAuthenticated, isLoading, user, session } = useAuth();
-  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
-  
-  // Add debug logging for authentication state
-  useEffect(() => {
-    console.log("MainLayout auth state:", { isAuthenticated, isLoading, userId: user?.id, sessionActive: !!session });
-  }, [isAuthenticated, isLoading, user, session]);
 
   // Update sidebar state when screen size changes
   useEffect(() => {
     setSidebarOpen(!isMobile);
   }, [isMobile]);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    console.log("User not authenticated, redirecting to login from MainLayout");
-    return <Navigate to="/login" />;
-  }
 
   return (
     <div className="flex h-screen overflow-hidden flex-col md:flex-row">
@@ -104,17 +81,15 @@ const MainLayout = ({ children }: MainLayoutProps) => {
             </div>
             
             <div className="text-sm text-gray-600">
-              {user?.role === "owner" && (
-                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
-                  Owner
-                </span>
-              )}
+              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                Demo Mode
+              </span>
             </div>
           </div>
           
           <div className="mt-2">
             <h1 className="text-xl font-semibold text-gray-800 truncate">
-              {user?.companyName || "Dashboard"}
+              EaaS Portal - Demo
             </h1>
           </div>
         </header>

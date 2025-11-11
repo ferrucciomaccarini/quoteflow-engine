@@ -1,7 +1,5 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
@@ -12,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
+import { DEMO_USER_ID } from "@/lib/constants";
 
 interface Customer {
   id: string;
@@ -34,7 +33,6 @@ interface CustomerInsert {
 }
 
 const CustomerCatalog = () => {
-  const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -51,18 +49,15 @@ const CustomerCatalog = () => {
   // Fetch customers
   useEffect(() => {
     const fetchCustomers = async () => {
-      if (!user) return;
-
       try {
         setIsLoading(true);
-        // Get customers with machine counts
+        // Get all customers (no user filter)
         const { data, error } = await supabase
           .from('customers')
           .select(`
             *,
             machines:machines(count)
-          `)
-          .eq('user_id', user.id);
+          `);
 
         if (error) throw error;
         
@@ -86,11 +81,9 @@ const CustomerCatalog = () => {
     };
 
     fetchCustomers();
-  }, [user, toast]);
+  }, [toast]);
 
   const handleAddCustomer = async () => {
-    if (!user) return;
-    
     if (!newCustomer.name) {
       toast({
         title: "Error",
@@ -101,11 +94,11 @@ const CustomerCatalog = () => {
     }
 
     try {
-      // Create the insert object with required name property
+      // Create the insert object with demo user ID
       const customerData: CustomerInsert = {
         ...newCustomer,
         name: newCustomer.name,
-        user_id: user.id,
+        user_id: DEMO_USER_ID,
       };
 
       const { data, error } = await supabase
@@ -143,14 +136,11 @@ const CustomerCatalog = () => {
   };
 
   const handleDeleteCustomer = async (id: string) => {
-    if (!user) return;
-
     try {
       const { error } = await supabase
         .from('customers')
         .delete()
-        .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('id', id);
 
       if (error) throw error;
 

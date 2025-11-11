@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import StepWizard from "../common/StepWizard";
-import { useAuth } from "@/context/AuthContext";
 import { saveQuote, saveQuoteCalculations } from "@/utils/quoteService";
 import {
   CustomerNeedsStep,
@@ -23,7 +22,6 @@ import {
 const QuoteCreation = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isAuthenticated } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const handleComplete = async (data: any) => {
@@ -31,15 +29,6 @@ const QuoteCreation = () => {
     
     try {
       setIsSubmitting(true);
-      
-      if (!isAuthenticated) {
-        toast({
-          title: "Authentication Required",
-          description: "Please log in to save quotes.",
-          variant: "destructive",
-        });
-        return;
-      }
       
       const quoteData = {
         ...data,

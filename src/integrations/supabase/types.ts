@@ -1621,14 +1621,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_current_bureau_spread: {
-        Args: { score: number }
-        Returns: number
-      }
-      get_current_rating_spread: {
-        Args: { score: number }
-        Returns: number
-      }
+      get_current_bureau_spread: { Args: { score: number }; Returns: number }
+      get_current_rating_spread: { Args: { score: number }; Returns: number }
     }
     Enums: {
       alert_type: "sensor_threshold" | "prediction" | "maintenance" | "system"

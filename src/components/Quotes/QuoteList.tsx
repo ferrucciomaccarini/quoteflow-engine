@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +6,6 @@ import { useNavigate } from "react-router-dom";
 import { Plus, FileText } from "lucide-react";
 import { DataTable } from "@/components/ui/DataTable";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/context/AuthContext";
 
 interface Quote {
   id: string;
@@ -33,26 +31,17 @@ const QuoteList = () => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, isAuthenticated } = useAuth();
 
   useEffect(() => {
     const fetchQuotes = async () => {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-
       try {
-        setLoading(true); // Fixed: Changed setIsLoading to setLoading
+        setLoading(true);
         setError(null);
         
-        console.log("Fetching quotes for user:", user.id);
-        
-        // Ensure consistent behavior by explicitly setting consistent parameters
+        // Fetch all quotes (no user filter)
         const { data, error } = await supabase
           .from('quotes')
           .select('*')
-          .eq('user_id', user.id)
           .neq('status', 'risk_assessment') // Skip risk assessments
           .order('created_at', { ascending: false });
 
@@ -77,7 +66,7 @@ const QuoteList = () => {
     };
 
     fetchQuotes();
-  }, [user, toast]);
+  }, [toast]);
 
   // Fix the cell functions to work with the row data directly instead of using getValue()
   const quoteColumns: Column<Quote>[] = [
@@ -154,35 +143,6 @@ const QuoteList = () => {
       )
     }
   ];
-
-  // If not authenticated, show auth required message
-  if (!isAuthenticated) {
-    return (
-      <div>
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold">Quotes</h1>
-            <p className="text-muted-foreground">
-              Manage your Equipment as a Service (EaaS) quotes
-            </p>
-          </div>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Authentication Required</CardTitle>
-            <CardDescription>Please log in to view your quotes</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center justify-center p-10">
-            <p className="mb-4 text-center">You need to be logged in to manage quotes.</p>
-            <Button onClick={() => navigate('/login')}>
-              Login
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div>

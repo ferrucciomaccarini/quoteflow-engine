@@ -1,6 +1,4 @@
-
 import React from "react";
-import { useAuth } from "@/context/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import {
@@ -23,13 +21,8 @@ import { SidebarHeader, SidebarFooter } from "./components/SidebarAccount";
 import { useSidebarNavigation } from "./hooks/useSidebarNavigation";
 
 export function Sidebar() {
-  const { isAuthenticated } = useAuth();
   const isMobile = useIsMobile();
   const { currentPath, isActive, isPartOfPath } = useSidebarNavigation();
-
-  if (!isAuthenticated) {
-    return null;
-  }
 
   return (
     <div className={cn(

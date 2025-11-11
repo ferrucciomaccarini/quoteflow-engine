@@ -1,9 +1,10 @@
-
 import { useState, useEffect } from "react";
-import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Machine, MachineCategory, Customer } from "../types";
+
+// Demo user ID for public access
+const DEMO_USER_ID = "00000000-0000-0000-0000-000000000000";
 
 export function useMachineData() {
   const [machines, setMachines] = useState<Machine[]>([]);
@@ -13,27 +14,18 @@ export function useMachineData() {
   const [isError, setIsError] = useState<boolean>(false);
   
   const { toast } = useToast();
-  const { user, isAuthenticated } = useAuth();
 
   // Fetch machine data
   useEffect(() => {
     const fetchMachines = async () => {
-      if (!isAuthenticated) {
-        setIsLoading(false);
-        return;
-      }
-      
       try {
         setIsLoading(true);
         setIsError(false);
         
-        console.log("Fetching machines data for user:", user?.id);
-        
-        // First, fetch categories for reference
+        // Fetch all categories (no user filter)
         const { data: categoryData, error: categoryError } = await supabase
           .from('machine_categories')
-          .select('id, name')
-          .eq('user_id', user?.id);
+          .select('id, name');
         
         if (categoryError) {
           console.error("Error fetching machine categories:", categoryError);
@@ -42,11 +34,10 @@ export function useMachineData() {
         
         setCategories(categoryData || []);
         
-        // Then fetch customers for reference
+        // Fetch all customers (no user filter)
         const { data: customerData, error: customerError } = await supabase
           .from('customers')
-          .select('id, name')
-          .eq('user_id', user?.id);
+          .select('id, name');
         
         if (customerError) {
           console.error("Error fetching customers:", customerError);
@@ -55,18 +46,16 @@ export function useMachineData() {
         
         setCustomers(customerData || []);
         
-        // Finally fetch machines with related data
+        // Fetch all machines (no user filter)
         const { data: machineData, error: machineError } = await supabase
           .from('machines')
-          .select('*, customers(name), machine_categories(name)')
-          .eq('user_id', user?.id);
+          .select('*, customers(name), machine_categories(name)');
         
         if (machineError) {
           console.error("Error fetching machines:", machineError);
           throw machineError;
         }
         
-        console.log("Received machines data:", machineData);
         setMachines(machineData || []);
       } catch (error: any) {
         console.error('Error in fetch operation:', error);
@@ -82,7 +71,7 @@ export function useMachineData() {
     };
 
     fetchMachines();
-  }, [user, isAuthenticated, toast]);
+  }, [toast]);
 
   return {
     machines,
