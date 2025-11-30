@@ -289,7 +289,7 @@ const MachineDetails = () => {
               Daily Rate
             </CardTitle>
             <CardDescription className="text-2xl font-bold">
-              ${machine.daily_rate.toLocaleString()}
+              {machine.daily_rate ? `$${machine.daily_rate.toLocaleString()}` : "N/A"}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -300,7 +300,7 @@ const MachineDetails = () => {
               Hourly Rate
             </CardTitle>
             <CardDescription className="text-2xl font-bold">
-              ${machine.hourly_rate.toLocaleString()}
+              {machine.hourly_rate ? `$${machine.hourly_rate.toLocaleString()}` : "N/A"}
             </CardDescription>
           </CardHeader>
         </Card>
